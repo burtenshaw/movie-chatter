@@ -1,4 +1,5 @@
 import nltk
+import string
 from nltk import word_tokenize
 from nltk.tag import pos_tag
 
@@ -131,6 +132,34 @@ def levenstein(string, dataset):
                 if x > score[0]:
                     score = (x, l[1])
     return score
+
+def movie_comparison(statement, other_statement):
+    '''
+    Compare two statements based on the movie titles:
+        Pull movie titles from the statement
+        Get IMDB keywords for those movies
+        Compare these with Jaccard similarity
+    '''
+    # Assume movie titles are propper nouns in the statement
+    # Thus: extract propper nouns, remove punctuation and cast to lowercase, hope the first propper noun is the movie title
+    try:
+        # First statement first
+        title_1 = [propper_noun.lower().translate(None,string.punctuation) for propper_noun in nounPropper(statement)][0]
+    except:
+        # No title found in first statement
+        return 0.0
+    try:
+        # Second statement
+        title_2 = [propper_noun.lower().translate(None,string.punctuation) for propper_noun in nounPropper(other_statement)][0]
+    except:
+        # No title found in second statement
+        return 0.0
+    
+    # TODO: Extract IMDB keywords from database (database needed)
+    # TODO: Compute Jaccard similarity between two bags of words
+    jaccard_sim = lambda x,y: len(set(x) & set(y)) / float(len(set(x) | set(y)))
+
+    return 0.0
 
 # expand into function based on synset
 positives = ['yes','ok','sure']

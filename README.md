@@ -1,8 +1,8 @@
 # Dependencies 
 
-[Chatterbot](https://github.com/gunthercox/ChatterBot)
-[Chatterbot Corpus](https://github.com/gunthercox/chatterbot-corpus)
-[IMDBpy](http://imdbpy.sourceforge.net/)
+* [Chatterbot](https://github.com/gunthercox/ChatterBot)
+* [Chatterbot Corpus](https://github.com/gunthercox/chatterbot-corpus)
+* [IMDBpy](http://imdbpy.sourceforge.net/)
 
 # Installation
 

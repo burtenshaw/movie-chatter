@@ -20,6 +20,9 @@ chatbot = ChatBot("Terminal",
         },
         {
              'import_path': 'logic_adapters.ratingAdapter',
+        },
+        {
+            'import_path': 'logic_adapters.faqAdapter',
         }
     ],
     input_adapter="chatterbot.input.TerminalAdapter",

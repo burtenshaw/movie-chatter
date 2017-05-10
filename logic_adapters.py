@@ -10,6 +10,52 @@ import string
 
 conversation_history = []
 
+
+class faqAdapter(LogicAdapter):
+    def __init__(self, **kwargs):
+        super(faqAdapter, self).__init__(**kwargs)
+
+    def can_process(self, statement):
+        # Accept phrase 'I have a question' or 'may I ask a question?'
+        words = ['question']
+        if any(x in statement.text.split() for x in words):
+            return True
+        else:
+            return False
+
+    def similar(self, m1, m2):
+        """
+        Naive comparison between two message
+        :return: 1 when m1 is considered similar to m2 or -1 when m1 is not considered similar to m2.
+        """
+        if any(x in nlp.word_tokenize(m1) for x in nlp.word_tokenize(m2)):
+            return 1
+        return -1
+
+    def process(self, statement):
+        response = collections.namedtuple('response', 'text confidence')
+        context = movies.context[0]
+        question = raw_input("What would you like to know?\n")
+
+        # Convert unicode strings to python strings
+        faq_list = []
+        for faq in movies.faqSplitter(context):
+            faq_list.append([faq[0].encode('utf-8'), faq[1].encode('utf-8')])
+
+        max_conf = -1
+        for (q, a) in faq_list:
+            if self.similar(question, q) > max_conf:
+                max_conf = self.similar(question, q)
+                response.confidence = max_conf
+                response.text = a
+
+        if response.confidence <= 0:
+            response.text = "I don't know, ask me again later."
+
+        return response
+
+
+
 class aboutAdapter(LogicAdapter):
 
     def __init__(self, **kwargs):
@@ -74,6 +120,7 @@ class movieAdapter(LogicAdapter):
 
         return response
 
+<<<<<<< HEAD
 class ratingAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(ratingAdapter, self).__init__(**kwargs)
@@ -105,3 +152,15 @@ class ratingAdapter(LogicAdapter):
         response.text += add
         response.confidence = 1
         return response
+=======
+if __name__ == '__main__':
+    import imdb
+    ia = imdb.IMDb()
+    movies.context = ia.search_movie('The Godfather')
+
+    faq = faqAdapter()
+    print faq.process("").text
+
+    # about = aboutAdapter()
+    # print about.process("")
+>>>>>>> 2aeca030808b0ade91000cbecabaf2d8f047372e

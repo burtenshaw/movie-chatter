@@ -118,6 +118,14 @@ def cast(imdb_movie):
     except IndexError:
         return []
 
+def writer(imdb_movie):
+    # Get the cast of a movie
+    ia.update(imdb_movie)
+    try:
+        return imdb_movie['writer']
+    except IndexError:
+        return []
+        
 # For building further Dataset:
 
 def faqSplitter(movie):

@@ -27,8 +27,9 @@ class actorAdapter(LogicAdapter):
         super(actorAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        # Accept phrases like 'who stars in the movie?'.
-        words = ['who']
+        # Accept phrases like 'who stars in the movie?'. ***who might not be valid since the user may ask eg: who are the writers
+        #TODO stem the content to erase plurals
+        words = ['actor','performer','stars'] 
         if any(x.lower() in statement.text.lower().split() for x in words):
             return True
         return False
@@ -47,24 +48,24 @@ class actorAdapter(LogicAdapter):
 
         # Return the 5 first actor names (less if needed).
         response.text = "The most important actors are " \
-                        + self.format(actornames[:min(len(actornames), 5)])
+                        + format(actornames[:min(len(actornames), 5)])
         response.confidence = 1
         return response
 
-    def format(self, data_list):
-        assert(len(data_list) > 0)
+def format(data_list):
+    assert(len(data_list) > 0)
 
-        string = ""
-        if len(data_list) == 1:
-            return data_list[0]
-        elif len(data_list) == 2:
-            return data_list[0] + " and " + data_list[1]
-        else:
-            for el in data_list[:-2]:
-                string += el + ", "
-            string += data_list[-2] + " and " + data_list[-1]
+    string = ""
+    if len(data_list) == 1:
+        return data_list[0]
+    elif len(data_list) == 2:
+        return data_list[0] + " and " + data_list[1]
+    else:
+        for el in data_list[:-2]:
+            string += el + ", "
+        string += data_list[-2] + " and " + data_list[-1]
 
-        return string
+    return string
 
 
 
@@ -206,6 +207,31 @@ class ratingAdapter(LogicAdapter):
                 add = "\nSo it should be really good!"
 
         response.text += add
+        response.confidence = 1
+        return response
+
+class writerAdapter(LogicAdapter):
+    def __init__(self, **kwargs):
+        super(writerAdapter, self).__init__(**kwargs)
+
+    def can_process(self, statement):
+        words = ['writer']
+        #remove punctuation
+        statement.text = statement.text.translate(None,string.punctuation)
+        #Don't use this if no context is set
+        if len(movies.context) == 0:
+            return 0
+        if any(x in statement.text.split() for x in words):
+            return 1
+        else:
+            return 0
+
+    def process(self, statement):
+        response = collections.namedtuple('response', 'text confidence')
+        context = movies.context[0]
+        writers = [writer['name'] for writer in movies.writer(context)]
+
+        response.text = "The writers of the movie are: \n" + format(writers)
         response.confidence = 1
         return response
 

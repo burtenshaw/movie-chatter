@@ -120,7 +120,6 @@ class movieAdapter(LogicAdapter):
 
         return response
 
-<<<<<<< HEAD
 class ratingAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(ratingAdapter, self).__init__(**kwargs)
@@ -152,7 +151,7 @@ class ratingAdapter(LogicAdapter):
         response.text += add
         response.confidence = 1
         return response
-=======
+
 if __name__ == '__main__':
     import imdb
     ia = imdb.IMDb()
@@ -163,4 +162,3 @@ if __name__ == '__main__':
 
     # about = aboutAdapter()
     # print about.process("")
->>>>>>> 2aeca030808b0ade91000cbecabaf2d8f047372e

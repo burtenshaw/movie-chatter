@@ -2,8 +2,9 @@ from __future__ import unicode_literals
 from chatterbot.logic import LogicAdapter
 from chatterbot.conversation import Statement
 from chatterbot.conversation import Response
-
+import chatterbot.comparisons as comparison
 import collections
+from utils import nlp
 
 from utils import corpus, movies, nlp
 import string
@@ -15,12 +16,28 @@ def default_response():
     Create a default response
     """
     response = collections.namedtuple('response', 'text confidence')
-
     # Set default answer
     response.text = "I don't know, ask me again later."
     response.conf = 0
-
     return response
+
+def format(data_list):
+    """
+    Convert list ([A, B, C]) in string of the form "A, B and C"
+    :return: string
+    """
+    assert(len(data_list) > 0)
+
+    string = ""
+    if len(data_list) == 1:
+        return data_list[0]
+    elif len(data_list) == 2:
+        return data_list[0] + " and " + data_list[1]
+    else:
+        for el in data_list[:-2]:
+            string += el + ", "
+        string += data_list[-2] + " and " + data_list[-1]
+    return string
 
 class actorAdapter(LogicAdapter):
     def __init__(self, **kwargs):
@@ -52,21 +69,6 @@ class actorAdapter(LogicAdapter):
         response.confidence = 1
         return response
 
-def format(data_list):
-    assert(len(data_list) > 0)
-
-    string = ""
-    if len(data_list) == 1:
-        return data_list[0]
-    elif len(data_list) == 2:
-        return data_list[0] + " and " + data_list[1]
-    else:
-        for el in data_list[:-2]:
-            string += el + ", "
-        string += data_list[-2] + " and " + data_list[-1]
-
-    return string
-
 
 
 class faqAdapter(LogicAdapter):
@@ -74,26 +76,55 @@ class faqAdapter(LogicAdapter):
         super(faqAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
+        """
+        Checks if faqAdapter can process the statement.
+        
+        return True if the statement is found to be similar to a FAQ.
+        """
+        # NAIVE
         # Accept phrase 'I have a question' or 'may I ask a question?'
-        words = ['question']
-        if any(x in statement.text.split() for x in words):
-            return True
-        else:
-            return False
+        # words = ['question']
+        # return any(x in statement.text.split() for x in words)
+
+        # SMARTER
+        threshold = 0.5
+        context = movies.context[0]
+
+        # If no FAQs were found, skip
+        raw_faqs = movies.faqSplitter(context)
+        if raw_faqs:
+            # Convert unicode strings to python strings
+            faq_list = []
+            for faq in movies.faqSplitter(context):
+                faq_list.append([faq[0].encode('utf-8'), faq[1].encode('utf-8')])
+
+            for faq in faq_list:
+                sim = self.similar(faq[0], statement.text)
+                if sim > threshold:
+                    return True
+        return False
+
 
     def similar(self, m1, m2):
         """
-        Naive comparison between two message
-        :return: 1 when m1 is considered similar to m2 or -1 when m1 is not considered similar to m2.
+        Comparison between two message based on Levenshtein distance
+        :return: float
         """
-        if any(x in nlp.word_tokenize(m1) for x in nlp.word_tokenize(m2)):
-            return 1
-        return -1
+        # Compute Jaccard similarity between two lists of words
+        jaccard_sim = lambda x,y: len(set(x) & set(y)) / float(len(set(x) | set(y)))
+
+        # Remove punctuation + set to lowercase
+        m1 = m1.lower().translate(None, string.punctuation)
+        m2 = m2.lower().translate(None, string.punctuation)
+
+        return jaccard_sim(m1, m2)
+        # return comparison.levenshtein_distance(Statement(m1), Statement(m2))
 
     def process(self, statement):
         response = default_response()
         context = movies.context[0]
-        question = raw_input("What would you like to know?\n")
+        # question = raw_input("What would you like to know?\n")
+        question = statement.text
 
         # If no FAQs were found, skip
         raw_faqs = movies.faqSplitter(context)
@@ -109,9 +140,7 @@ class faqAdapter(LogicAdapter):
                     max_conf = self.similar(question, q)
                     response.confidence = max_conf
                     response.text = a
-
         return response
-
 
 
 class aboutAdapter(LogicAdapter):
@@ -238,10 +267,22 @@ class writerAdapter(LogicAdapter):
 if __name__ == '__main__':
     import imdb
     ia = imdb.IMDb()
-    # movies.context = ia.search_movie('The Godfather')
+    movies.context = ia.search_movie('The Godfather')
     # movies.context = ia.search_movie('Asdfmovie')
-    movies.context = ia.search_movie('Total Blackout')
+    # movies.context = ia.search_movie('Total Blackout')
 
-    a = actorAdapter()
-    print a.process("").text
+    # a = actorAdapter()
+    # print a.process("").text
+
+    # f = faqAdapter()
+    # print f.process("").text
+
+    f = faqAdapter()
+    print f.similar(str("A note regarding spoilers"),
+                    str("Will you tell spoilers?"))
+    print f.similar(str("A note regarding spoilers"),
+                    str("Is this about cars?"))
+    # assert(f.can_process(Statement('May I ask you something?')))
+    # assert(not f.can_process(Statement("What is this movie's rating?")))
+    # assert(not f.can_process(Statement("Who stars in this movie?")))
 

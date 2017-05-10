@@ -16,7 +16,10 @@ chatbot = ChatBot("Terminal",
              'import_path': 'logic_adapters.movieAdapter',
         },
         {
-             'import_path': 'logic_adapters.aboutAdapter',   
+             'import_path': 'logic_adapters.aboutAdapter',
+        },
+        {
+             'import_path': 'logic_adapters.ratingAdapter',
         }
     ],
     input_adapter="chatterbot.input.TerminalAdapter",
@@ -39,7 +42,7 @@ while True:
         # is not used by the TerminalAdapter
         bot_input = chatbot.get_response(None)
         print("---")
-        
+
     # Press ctrl-c or ctrl-d on the keyboard to exit
     except (KeyboardInterrupt, EOFError, SystemExit):
         break

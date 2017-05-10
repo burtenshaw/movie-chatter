@@ -6,6 +6,7 @@ from chatterbot.conversation import Response
 import collections
 
 from utils import corpus, movies, nlp
+import string
 
 conversation_history = []
 
@@ -15,7 +16,7 @@ class aboutAdapter(LogicAdapter):
         super(aboutAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        
+
         words = ['about','explain','information']
         if any(x in statement.text.split() for x in words):
             #if len(movies.context) > 0:
@@ -44,7 +45,7 @@ class movieAdapter(LogicAdapter):
 
     def can_process(self, statement):
         words = ['movie','film','watch']
-        
+
         if any(x in statement.text.split() for x in words):
             return 1
         else:
@@ -67,8 +68,40 @@ class movieAdapter(LogicAdapter):
             response.text = "How about %s?" %(str(similar))
             response.confidence = 1
             movies.context.append(similar)
-            
+
         else:
             response.confidence = 0
 
+        return response
+
+class ratingAdapter(LogicAdapter):
+    def __init__(self, **kwargs):
+        super(ratingAdapter, self).__init__(**kwargs)
+
+    def can_process(self, statement):
+        words = ['rating','popular','good','like']
+
+        #remove punctuation
+        statement.text = statement.text.translate(None,string.punctuation)
+        #Don't use this if no context is set
+        if len(movies.context) == 0:
+            return 0
+
+        if any(x in statement.text.split() for x in words):
+            return 1
+        else:
+            return 0
+
+    def process(self, statement):
+        response = collections.namedtuple('response', 'text confidence')
+        context = movies.context[0]
+        rating = movies.rating(context)
+        response.text = "The movie is rated " + str(rating) + "/10."
+        if rating > 6:
+            add = "\nIn general, people seem to like it."
+            if rating > 8:
+                add = "\nSo it should be really good!"
+
+        response.text += add
+        response.confidence = 1
         return response

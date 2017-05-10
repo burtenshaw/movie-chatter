@@ -50,11 +50,11 @@ def checkPerson(string):
 
     last_noun = nouns[-1]
     s_result = ia.search_person(last_noun)
-    
+
     if len(s_result) < 1:
         response = False
-    
-    else:    
+
+    else:
         top_hit = str(s_result[0])
         if top_hit is last_noun:
             response = top_hit
@@ -76,7 +76,7 @@ def checkMovie(input_phrase):
 def similarMovie(imdb_movie):
     # Take one of the top 5 movies from "people also liked"
     ia.update(imdb_movie, 'recommendations')
-    rand = random.randint(0, 4) 
+    rand = random.randint(0, 4)
     nearest = ia.get_movie_recommendations(imdb_movie.movieID)['data']['recommendations']['database'][0:5]
     return nearest[rand]
 
@@ -92,6 +92,12 @@ def plot(imdb_movie):
     ia.update(imdb_movie, 'plot')
     plot = ia.get_movie_plot(imdb_movie.movieID)['data']['plot'][0]
     return plot
+
+def rating(imdb_movie):
+    #get the rating of a movie
+    # movie = tophit(imdb_movie)
+    ia.update(imdb_movie)
+    return imdb_movie['rating']
 
 # For building further Dataset:
 
@@ -128,5 +134,5 @@ def keywordData():
         top_250_keywords.append(i['keywords'])
 
     dataset = dict(zip(top_250_titles, top_250_keywords))
-    
+
     return dataset

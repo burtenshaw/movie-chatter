@@ -35,17 +35,23 @@ def getMovie(input_phrase):
     # Get a tuple from a sentence; ((title, director), bool, imdb_movie)
     movie = tophit(input_phrase)
     if movie == False:
-        response = False
-    else:
-        ia.update(movie)
-        title = str(movie)
-        director = ""
-        try :
-            director = str(movie['director'][0])
-        except KeyError:
-            # Handle unknown director
-            director = "Unknown"
-        response = ((title, director), True, movie)
+        #if no movie was found, try seperate nouns
+        for noun in nlp.nounList(input_phrase):
+            movie = tophit(noun)
+            if movie != False:
+                break
+        if movie == False:
+            return False
+
+    ia.update(movie)
+    title = str(movie)
+    director = ""
+    try :
+        director = str(movie['director'][0])
+    except KeyError:
+        # Handle unknown director
+        director = "Unknown"
+    response = ((title, director), True, movie)
     return response
 
 def checkPerson(string):

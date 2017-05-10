@@ -104,6 +104,14 @@ def propperNounList(string):
          pn_list.append(npstr)
     return pn_list
 
+
+def nounList(string):
+    tokens = nltk.word_tokenize(string)
+    tagged = nltk.pos_tag(tokens)
+    nouns = [word for word,pos in tagged \
+    	if (pos == 'NN' or pos == 'NNP' or pos == 'NNS' or pos == 'NNPS')]
+    return nouns
+
 # Handling via their characters:
 
 def questionList(list):
@@ -120,7 +128,7 @@ def questionList(list):
 def levenstein(string, dataset):
     '''
     Compare the levenstein distance between the words in a sentence, and a dataset of keywords.
-    To use: 
+    To use:
     query = "I want to go and play football"
     dataset = corpus.load("data/keywords_dictionary.json")
     returns a tuple of score and ID

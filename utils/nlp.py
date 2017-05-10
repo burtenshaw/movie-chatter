@@ -1,5 +1,6 @@
 import nltk
 import string
+from collections import defaultdict
 from nltk import word_tokenize
 from nltk.tag import pos_tag
 
@@ -133,7 +134,7 @@ def levenstein(string, dataset):
                     score = (x, l[1])
     return score
 
-def movie_comparison(statement, other_statement):
+def movie_comparison(statement, other_statement, data='data/keywords_dictionary.json'):
     '''
     Compare two statements based on the movie titles:
         Pull movie titles from the statement
@@ -141,25 +142,37 @@ def movie_comparison(statement, other_statement):
         Compare these with Jaccard similarity
     '''
     # Assume movie titles are propper nouns in the statement
-    # Thus: extract propper nouns, remove punctuation and cast to lowercase, hope the first propper noun is the movie title
+    # Thus: extract propper nouns and remove punctuation, hope the first propper noun is the movie title
     try:
         # First statement first
-        title_1 = [propper_noun.lower().translate(None,string.punctuation) for propper_noun in nounPropper(statement)][0]
+        title_1 = [propper_noun.translate(None,string.punctuation) for propper_noun in nounPropper(statement)][0]
     except:
         # No title found in first statement
         return 0.0
     try:
         # Second statement
-        title_2 = [propper_noun.lower().translate(None,string.punctuation) for propper_noun in nounPropper(other_statement)][0]
+        title_2 = [propper_noun.translate(None,string.punctuation) for propper_noun in nounPropper(other_statement)][0]
     except:
         # No title found in second statement
         return 0.0
-    
     # TODO: Extract IMDB keywords from database (database needed)
-    # TODO: Compute Jaccard similarity between two bags of words
+    # For testing purposes: read in keywords from top 250 movies in JSON format
+    #                       Title is at first index, ID at second, list of keywords at third
+    keywords = defaultdict(list,{movie[0]: movie[2] for movie in corpus.load(data)})
+
+    # Extract keywords for both titles
+    keywords_1 = keywords[title_1]
+    keywords_2 = keywords[title_2]
+
+    # Compute Jaccard similarity between two bags of words
     jaccard_sim = lambda x,y: len(set(x) & set(y)) / float(len(set(x) | set(y)))
 
-    return 0.0
+    return jaccard_sim(keywords_1,keywords_2)
 
 # expand into function based on synset
 positives = ['yes','ok','sure']
+
+
+if __name__=='__main__':
+    # Just for testing
+    print movie_comparison('I thought The Godfather was amazing!', 'I loved The Godfather a lot!')

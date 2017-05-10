@@ -74,9 +74,6 @@ class aboutAdapter(LogicAdapter):
         context = movies.context[0]
         val = raw_input("Do you know %s?\n" %(str(context)))
 
-        print val
-        print nlp.positives
-
         if any(x in val for x in nlp.positives):
             print "Something you might not know is ..."
             response.text = movies.trivia(movies.context[0])

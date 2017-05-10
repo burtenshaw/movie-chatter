@@ -39,7 +39,12 @@ def getMovie(input_phrase):
     else:
         ia.update(movie)
         title = str(movie)
-        director = str(movie['director'][0])
+        director = ""
+        try :
+            director = str(movie['director'][0])
+        except KeyError:
+            # Handle unknown director
+            director = "Unknown"
         response = ((title, director), True, movie)
     return response
 
@@ -98,6 +103,14 @@ def rating(imdb_movie):
     # movie = tophit(imdb_movie)
     ia.update(imdb_movie)
     return imdb_movie['rating']
+
+def cast(imdb_movie):
+    # Get the cast of a movie
+    ia.update(imdb_movie)
+    try:
+        return imdb_movie['cast']
+    except IndexError:
+        return []
 
 # For building further Dataset:
 

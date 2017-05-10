@@ -10,6 +10,63 @@ import string
 
 conversation_history = []
 
+def default_response():
+    """
+    Create a default response
+    """
+    response = collections.namedtuple('response', 'text confidence')
+
+    # Set default answer
+    response.text = "I don't know, ask me again later."
+    response.conf = 0
+
+    return response
+
+class actorAdapter(LogicAdapter):
+    def __init__(self, **kwargs):
+        super(actorAdapter, self).__init__(**kwargs)
+
+    def can_process(self, statement):
+        # Accept phrases like 'who stars in the movie?'.
+        words = ['who']
+        if any(x.lower() in statement.text.lower().split() for x in words):
+            return True
+        return False
+
+    def process(self, statement):
+        response = collections.namedtuple('response', 'text confidence')
+        context = movies.context[0]
+
+        response = self.enumerate(context)
+
+        return response
+
+    def enumerate(self, context):
+        actornames = [actor['name'] for actor in movies.cast(context)]
+        response = collections.namedtuple('response', 'text confidence')
+
+        # Return the 5 first actor names (less if needed).
+        response.text = "The most important actors are " \
+                        + self.format(actornames[:min(len(actornames), 5)])
+        response.confidence = 1
+        return response
+
+    def format(self, data_list):
+        assert(len(data_list) > 0)
+
+        string = ""
+        if len(data_list) == 1:
+            return data_list[0]
+        elif len(data_list) == 2:
+            return data_list[0] + " and " + data_list[1]
+        else:
+            for el in data_list[:-2]:
+                string += el + ", "
+            string += data_list[-2] + " and " + data_list[-1]
+
+        return string
+
+
 
 class faqAdapter(LogicAdapter):
     def __init__(self, **kwargs):
@@ -33,24 +90,24 @@ class faqAdapter(LogicAdapter):
         return -1
 
     def process(self, statement):
-        response = collections.namedtuple('response', 'text confidence')
+        response = default_response()
         context = movies.context[0]
         question = raw_input("What would you like to know?\n")
 
-        # Convert unicode strings to python strings
-        faq_list = []
-        for faq in movies.faqSplitter(context):
-            faq_list.append([faq[0].encode('utf-8'), faq[1].encode('utf-8')])
+        # If no FAQs were found, skip
+        raw_faqs = movies.faqSplitter(context)
+        if raw_faqs:
+            # Convert unicode strings to python strings
+            faq_list = []
+            for faq in movies.faqSplitter(context):
+                faq_list.append([faq[0].encode('utf-8'), faq[1].encode('utf-8')])
 
-        max_conf = -1
-        for (q, a) in faq_list:
-            if self.similar(question, q) > max_conf:
-                max_conf = self.similar(question, q)
-                response.confidence = max_conf
-                response.text = a
-
-        if response.confidence <= 0:
-            response.text = "I don't know, ask me again later."
+            max_conf = -1
+            for (q, a) in faq_list:
+                if self.similar(question, q) > max_conf:
+                    max_conf = self.similar(question, q)
+                    response.confidence = max_conf
+                    response.text = a
 
         return response
 
@@ -155,10 +212,10 @@ class ratingAdapter(LogicAdapter):
 if __name__ == '__main__':
     import imdb
     ia = imdb.IMDb()
-    movies.context = ia.search_movie('The Godfather')
+    # movies.context = ia.search_movie('The Godfather')
+    # movies.context = ia.search_movie('Asdfmovie')
+    movies.context = ia.search_movie('Total Blackout')
 
-    faq = faqAdapter()
-    print faq.process("").text
+    a = actorAdapter()
+    print a.process("").text
 
-    # about = aboutAdapter()
-    # print about.process("")

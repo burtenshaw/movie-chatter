@@ -1,16 +1,38 @@
 from chatterbot import ChatBot
 from chatterbot.trainers import ChatterBotCorpusTrainer
 
+import argparse
+
 import logic_adapters
 
 from utils import movies
 # Uncomment the following line to enable verbose logging
 # logging.basicConfig(level=logging.INFO)
 
+parser = argparse.ArgumentParser()
+
+# By default use JSON storage adapter; mongodb optional.
+
+# Usage: python chatter.py --mongodb host:port
+# Example: python chatter.py --mongodb localhost:27017
+parser.add_argument("--mongodb")
+
+args = parser.parse_args()
+
+if args.mongodb is not None:
+    database_uri = "mongodb://" + args.mongodb
+    storage_adapter = "chatterbot.storage.MongoDatabaseAdapter"
+    database = "chatterbot-database"
+else:
+    database_uri = None
+    storage_adapter = "chatterbot.storage.JsonFileStorageAdapter"
+    database = "data/database.db"
+
 # Create a new instance of a ChatBot
 
 chatbot = ChatBot("Terminal",
-    storage_adapter="chatterbot.storage.JsonFileStorageAdapter",
+    storage_adapter=storage_adapter,
+    database_uri=database_uri,
     logic_adapters=[
         {
              'import_path': 'logic_adapters.movieAdapter',
@@ -33,7 +55,7 @@ chatbot = ChatBot("Terminal",
     ],
     input_adapter="chatterbot.input.TerminalAdapter",
     output_adapter="chatterbot.output.TerminalAdapter",
-    database="data/database.db",
+    database=database,
     trainer='chatterbot.trainers.ListTrainer'
 )
 

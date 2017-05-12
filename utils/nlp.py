@@ -187,7 +187,6 @@ def tweetCrawl(search_term, cnt):
     '''
     Search Twitter for a term and return (cnt) number of tweets as a list of tuples of tweet and first response.
     '''
-
     twitter = Twitter(language='en')
     tweets = twitter.search(search_term, cached=False, count=cnt)
     pairs = []

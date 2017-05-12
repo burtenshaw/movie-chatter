@@ -4,6 +4,10 @@ from collections import defaultdict
 from nltk import word_tokenize
 from nltk.tag import pos_tag
 
+from pattern.web import Twitter, hashtags
+import requests
+from bs4 import BeautifulSoup
+
 # Levenstein
 from nltk.metrics import *
 # Stopwords
@@ -176,6 +180,30 @@ def movie_comparison(statement, other_statement, data='data/keywords_dictionary.
     jaccard_sim = lambda x,y: len(set(x) & set(y)) / float(len(set(x) | set(y)))
 
     return jaccard_sim(keywords_1,keywords_2)
+
+# Twitter crawler for Training.
+
+def tweetCrawl(search_term, cnt):
+    '''
+    Search Twitter for a term and return (cnt) number of tweets as a list of tuples of tweet and first response.
+    '''
+
+    twitter = Twitter(language='en')
+    tweets = twitter.search(search_term, cached=False, count=cnt)
+    pairs = []
+    for t in tweets:
+        try:
+            replies = [i.get_text() for i in BeautifulSoup(requests.get(t['url']).content, 'html.parser').select(".tweet-text")]
+            pairs.append((t['text'],replies[1]))
+        except IndexError:
+            pass
+    return pairs
+
+## To use tweetCrawl
+# search_term = "What movie should i watch?"
+# cnt =999
+# tweets = tweetCrawl(search_term, cnt)
+
 
 # expand into function based on synset
 positives = ['yes','ok','sure']

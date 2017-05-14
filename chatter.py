@@ -26,7 +26,7 @@ if args.mongodb is not None:
 else:
     database_uri = None
     storage_adapter = "chatterbot.storage.JsonFileStorageAdapter"
-    database = "data/database.db"
+    database = "data/top_250_faq.json"
 
 # Create a new instance of a ChatBot
 

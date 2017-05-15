@@ -285,7 +285,8 @@ class writerAdapter(LogicAdapter):
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
         context = movies.context[0]
-        response.text = "here are some of the movies: \n" + format(writers)
+        writers = [writer['name'] for writer in movies.writer(context)]
+        response.text = "The writers of the movie are: \n" + format(writers)
         response.confidence = 1
 
         return response

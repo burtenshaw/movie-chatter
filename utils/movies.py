@@ -2,7 +2,7 @@ import imdb
 from imdb._exceptions import IMDbDataAccessError, IMDbError
 
 import random
-
+from class_movie import Movie
 import nlp
 import corpus
 
@@ -51,7 +51,8 @@ def getMovie(input_phrase):
     except KeyError:
         # Handle unknown director
         director = "Unknown"
-    response = ((title, director), True, movie)
+    film = Movie(movie.movieID, title, movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
+    response = (film,True, movie)
     return response
 
 def checkPerson(string):

@@ -210,7 +210,7 @@ class movieAdapter(LogicAdapter):
             fav_movie = raw_input("I don't know that one. Any others? \n")
             movie = movies.getMovie(fav_movie)
 
-        val = raw_input("Do you mean %s directed by %s?\n" %(movie[0][0],movie[0][1]))
+        val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director[0]))
 
         if any(x in val for x in nlp.positives):
             similar = movies.similarMovie(movie[2])
@@ -285,12 +285,36 @@ class writerAdapter(LogicAdapter):
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
         context = movies.context[0]
-        writers = [writer['name'] for writer in movies.writer(context)]
-
-        response.text = "The writers of the movie are: \n" + format(writers)
+        response.text = "here are some of the movies: \n" + format(writers)
         response.confidence = 1
 
         return response
+
+class GenreAdapter(LogicAdapter):
+    def __init__(self, **kwargs):
+        super(GenreAdapter, self).__init__(**kwargs)
+        #Phrase 'wanna see some action tonight.'
+    def can_process(self, statement):
+        words = ['action','comedy', 'documentary', 'family', 'adventure', 'biography', 'crime','drama','romance','fantasy', 'horror', 'war','musical',
+        'sport', 'thriller', 'western','music','history','thriller']
+        statement.text = statement.text.translate(None,string.punctuation)
+        if len(movies.context) == 0:
+            return 0
+        statement.text = statement.text.translate(None,string.punctuation)
+        similarity = nlp.levensteinWord(statement.text.lower().split(), words)
+        threshold = 0.5
+        if similarity >= threshold:
+            return 1
+        else:
+            return 0
+
+    def process(self, statement):
+        response = collections.namedtuple('response', 'text confidence')
+        '''
+            returning some movies on genre requesting. 
+        '''
+        return response
+
 
 if __name__ == '__main__':
     import imdb

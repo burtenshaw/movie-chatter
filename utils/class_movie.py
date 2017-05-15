@@ -2,14 +2,13 @@
 
 #class Movie which will handle an IMBD movie and its properties
 class Movie(object):
-	def __init__(self, id, title, director, plot, rating, writer, actors, genres, cast, year):
+	def __init__(self, id, title, director, plot, rating, writer, genres, cast, year):
 		self.id = id
 		self.title = title
 		self.director = director
 		self.plot = plot
 		self.writer = writer
 		self.rating = rating
-		self.actors = actors
 		self.genres = genres
 		self.cast = cast
 		self.year = year
@@ -55,13 +54,6 @@ class Movie(object):
 	@writer.setter
 	def writer(self, value):
 		self.__writer = value
-
-	@property
-	def actors(self):
-		return self.__actors
-	@actors.setter
-	def actors(self, value):
-		self.__actors = value
 
 	@property
 	def genres(self):

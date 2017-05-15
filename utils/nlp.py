@@ -1,9 +1,9 @@
+from __future__ import division
 import nltk
 import string
 from collections import defaultdict
 from nltk import word_tokenize
 from nltk.tag import pos_tag
-
 from pattern.web import Twitter, hashtags
 import requests
 from bs4 import BeautifulSoup
@@ -129,7 +129,7 @@ def questionList(list):
             questions_answers.append(tuple(pair))
     return questions_answers
 
-def levenstein(string, dataset):
+def levenstein(query, dataset):
     '''
     Compare the levenstein distance between the words in a sentence, and a dataset of keywords.
     To use:
@@ -144,7 +144,26 @@ def levenstein(string, dataset):
                 x = edit_distance(w1, w2)
                 if x > score[0]:
                     score = (x, l[1])
-    return score
+    return 
+
+
+def levensteinWord(query, dataset):
+    '''
+    Compare the levenstein distance between the words in a sentence, and a dataset of keywords.
+    To use:
+    query = "I want to go and play football"
+    dataset = "play"
+    returns the max score
+    '''
+    similarity = 0.0
+    for w1 in dataset:
+        for w2 in query:
+            x = edit_distance(w1, w2)
+            bigger = max(len(w1),len(w2))
+            pct = (bigger - x)/bigger
+            if pct > similarity:
+                similarity = pct
+    return similarity
 
 def movie_comparison(statement, other_statement, data='data/keywords_dictionary.json'):
     '''

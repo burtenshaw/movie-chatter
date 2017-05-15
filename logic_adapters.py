@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from chatterbot.logic import LogicAdapter
 from chatterbot.conversation import Statement
 from chatterbot.conversation import Response
-import chatterbot.comparisons as comparison
+import chatterbot.comparisons as comparisons
 import collections
 from utils import nlp
 
@@ -44,12 +44,14 @@ class actorAdapter(LogicAdapter):
         super(actorAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        # Accept phrases like 'who stars in the movie?'. ***who might not be valid since the user may ask eg: who are the writers
-        #TODO stem the content to erase plurals
-        words = ['actor','performer','stars'] 
-        if any(x.lower() in statement.text.lower().split() for x in words):
-            return True
-        return False
+        words = ['actor','performer','star']
+        statement.text = statement.text.translate(None,string.punctuation)
+        similarity = nlp.levensteinWord(statement.text.lower().split(), words)
+        threshold = 0.5
+        if similarity >= threshold:
+            return 1
+        else:
+            return 0
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -67,6 +69,7 @@ class actorAdapter(LogicAdapter):
         response.text = "The most important actors are " \
                         + format(actornames[:min(len(actornames), 5)])
         response.confidence = 1
+
         return response
 
 
@@ -151,11 +154,18 @@ class aboutAdapter(LogicAdapter):
     def can_process(self, statement):
 
         words = ['about','explain','information']
-        if any(x in statement.text.split() for x in words):
-            #if len(movies.context) > 0:
+        statement.text = statement.text.translate(None,string.punctuation)
+        similarity = nlp.levensteinWord(statement.text.lower().split(), words)
+        threshold = 0.5
+        if similarity >= threshold:
             return 1
         else:
             return 0
+        # if any(x in statement.text.split() for x in words):
+        #     #if len(movies.context) > 0:
+        #     return 1
+        # else:
+        #     return 0
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -169,7 +179,7 @@ class aboutAdapter(LogicAdapter):
         else:
             response.text = movies.plot(context)
             response.confidence = 0.7
-
+        maxSimilarity = 0
         return response
 
 class movieAdapter(LogicAdapter):
@@ -177,12 +187,18 @@ class movieAdapter(LogicAdapter):
         super(movieAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        words = ['movie','film','watch']
-
-        if any(x in statement.text.split() for x in words):
+        words = ['movie','film','watch']        
+        statement.text = statement.text.translate(None,string.punctuation)
+        similarity = nlp.levensteinWord(statement.text.lower().split(), words)
+        threshold = 0.5
+        if similarity >= threshold:
             return 1
         else:
             return 0
+        # if any(x in statement.text.split() for x in words):
+        #     return 1
+        # else:
+        #     return 0
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -213,17 +229,20 @@ class ratingAdapter(LogicAdapter):
 
     def can_process(self, statement):
         words = ['rating','popular','good','like']
-
-        #remove punctuation
-        statement.text = statement.text.translate(None,string.punctuation)
         #Don't use this if no context is set
         if len(movies.context) == 0:
             return 0
-
-        if any(x in statement.text.split() for x in words):
+        statement.text = statement.text.translate(None,string.punctuation)
+        similarity = nlp.levensteinWord(statement.text.lower().split(), words)
+        threshold = 0.5
+        if similarity >= threshold:
             return 1
         else:
             return 0
+        # if any(x in statement.text.split() for x in words):
+        #     return 1
+        # else:
+        #     return 0
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -237,6 +256,7 @@ class ratingAdapter(LogicAdapter):
 
         response.text += add
         response.confidence = 1
+
         return response
 
 class writerAdapter(LogicAdapter):
@@ -250,10 +270,17 @@ class writerAdapter(LogicAdapter):
         #Don't use this if no context is set
         if len(movies.context) == 0:
             return 0
-        if any(x in statement.text.split() for x in words):
+        statement.text = statement.text.translate(None,string.punctuation)
+        similarity = nlp.levensteinWord(statement.text.lower().split(), words)
+        threshold = 0.5
+        if similarity >= threshold:
             return 1
         else:
             return 0
+        # if any(x in statement.text.split() for x in words):
+        #     return 1
+        # else:
+        #     return 0
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -262,6 +289,7 @@ class writerAdapter(LogicAdapter):
 
         response.text = "The writers of the movie are: \n" + format(writers)
         response.confidence = 1
+
         return response
 
 if __name__ == '__main__':

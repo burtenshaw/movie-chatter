@@ -55,6 +55,18 @@ def getMovie(input_phrase):
     response = (film,True, movie)
     return response
 
+def genreMovies(input_phrase):
+    movies = []
+    for movie in top250:
+        ia.update(movie)
+        if input_phrase in movie['genre']:
+            film = Movie(movie.movieID, movie['title'], movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
+            movies.append(film)
+            if len(movies) > 5:
+                break
+
+    return movies
+
 def checkPerson(string):
     # Check if a person is on IMDB
     nouns = nlp.propperNounList(string)

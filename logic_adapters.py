@@ -311,9 +311,14 @@ class GenreAdapter(LogicAdapter):
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
-        '''
-            returning some movies on genre requesting. 
-        '''
+        context = movies.context[0]
+        films = movies.genreMovies(context)
+        answer =  "Some movies in this genre are: \n"
+        for mov in films:
+            answer += "Title " +mov.title + ",  Rated: " + str(mov.rating) + '\n'
+        response.text = answer
+        response.confidence = 1
+
         return response
 
 

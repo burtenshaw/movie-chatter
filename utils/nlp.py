@@ -4,6 +4,7 @@ import string
 from collections import defaultdict
 from nltk import word_tokenize
 from nltk.tag import pos_tag
+import numpy as np
 from pattern.web import Twitter, hashtags
 import requests
 from bs4 import BeautifulSoup
@@ -165,6 +166,37 @@ def levensteinWord(query, dataset):
                 similarity = pct
     return similarity
 
+def smith_waterman(seq1, seq2, match=3, mismatch=-1, insertion=-1, deletion=-1, normalize=1):
+    '''Temporarily borrowed from stolen from http://climberg.de/page/smith-waterman-distance-for-feature-extraction-in-nlp/'''
+    # switch sequences, so that seq1 is the longer sequence to search for seq2
+    if len(seq2) > len(seq1): seq1, seq2 = seq2, seq1
+    # create the distance matrix
+    mat = np.zeros((len(seq2) + 1, len(seq1) + 1))
+    # iterate over the matrix column wise
+    for i in range(1, mat.shape[0]):
+        # iterate over the matrix row wise
+        for j in range(1, mat.shape[1]):
+            # set the current matrix element with the maximum of 4 different cases
+            mat[i, j] = max(
+                # negative values are not allowed
+                0,
+                # if previous character matches increase the score by match, else decrease it by mismatch
+                mat[i - 1, j - 1] + (match if seq1[j - 1] == seq2[i - 1] else mismatch),
+                # one character is missing in seq2, so decrease the score by deletion
+                mat[i - 1, j] + deletion,
+                # one additional character is in seq2, so decrease the scare by insertion
+                mat[i, j - 1] + insertion
+            )
+    # the maximum of mat is now the score, which is returned raw or normalized (with a range of 0-1)
+    return np.max(mat) / (len(seq2) * match) if normalize else np.max(mat)
+
+def getBestMatch(statement,movies):
+    '''
+    Get the movie title with the highest Smith-Waterman similarity compared to the statement
+    '''
+    scores = [(smith_waterman(statement,movie),movie) for movie in movies]
+    return max(scores)[1]
+
 def movie_comparison(statement, other_statement, data='data/keywords_dictionary.json'):
     '''
     Compare two statements based on the movie titles:
@@ -172,24 +204,16 @@ def movie_comparison(statement, other_statement, data='data/keywords_dictionary.
         Get IMDB keywords for those movies
         Compare these with Jaccard similarity
     '''
-    # Assume movie titles are propper nouns in the statement
-    # Thus: extract propper nouns and remove punctuation, hope the first propper noun is the movie title
-    try:
-        # First statement first
-        title_1 = [propper_noun.translate(None,string.punctuation) for propper_noun in nounPropper(statement)][0]
-    except:
-        # No title found in first statement
-        return 0.0
-    try:
-        # Second statement
-        title_2 = [propper_noun.translate(None,string.punctuation) for propper_noun in nounPropper(other_statement)][0]
-    except:
-        # No title found in second statement
-        return 0.0
     # TODO: Extract IMDB keywords from database (database needed)
     # For testing purposes: read in keywords from top 250 movies in JSON format
     #                       Title is at first index, ID at second, list of keywords at third
     keywords = defaultdict(list,{movie[0]: movie[2] for movie in corpus.load(data)})
+    
+    # Find best match of movie title in statement
+    title_1 = getBestMatch(statement,keywords.keys())
+    title_2 = getBestMatch(other_statement,keywords.keys())
+    print title_1, 'extracted from', statement 
+    print title_2, 'extracted from', other_statement
 
     # Extract keywords for both titles
     keywords_1 = keywords[title_1]

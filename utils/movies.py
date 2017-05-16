@@ -178,3 +178,12 @@ def keywordData():
     dataset = dict(zip(top_250_titles, top_250_keywords))
 
     return dataset
+
+def imdbMovie(movie_tuple):
+    """
+    Extract IMDb.Movie from ((title, director), True, imdb_movie)
+    """
+    assert(isinstance(movie_tuple, tuple))
+    assert(len(movie_tuple) == 3)
+
+    return movie_tuple[2]

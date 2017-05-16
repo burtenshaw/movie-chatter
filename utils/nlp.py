@@ -16,6 +16,9 @@ from nltk.corpus import stopwords
 # To use the stop words list:
 stops = set(stopwords.words("english"))
 
+Stemmer = nltk.PorterStemmer()
+Lemmatizer = nltk.WordNetLemmatizer()
+
 import corpus
 
 
@@ -197,6 +200,13 @@ def getBestMatch(statement,movies):
     scores = [(smith_waterman(statement,movie),movie) for movie in movies]
     return max(scores)[1]
 
+
+def jaccard_sim(x,y):
+    """
+    Compute Jaccard similarity between two bags of words
+    """
+    return len(set(x) & set(y)) / float(len(set(x) | set(y)))
+
 def movie_comparison(statement, other_statement, data='data/keywords_dictionary.json'):
     '''
     Compare two statements based on the movie titles:
@@ -218,9 +228,6 @@ def movie_comparison(statement, other_statement, data='data/keywords_dictionary.
     # Extract keywords for both titles
     keywords_1 = keywords[title_1]
     keywords_2 = keywords[title_2]
-
-    # Compute Jaccard similarity between two bags of words
-    jaccard_sim = lambda x,y: len(set(x) & set(y)) / float(len(set(x) | set(y)))
 
     return jaccard_sim(keywords_1,keywords_2)
 
@@ -250,6 +257,24 @@ def tweetCrawl(search_term, cnt):
 # expand into function based on synset
 positives = ['yes','ok','sure']
 
+def isQuestion(message):
+    """
+    Check if 'message' is a question.
+    """
+    # Very basic for now, should become more intelligent.
+    if '?' in message:
+        return True
+    return False
+
+
+def cleanString(string):
+    return string.lower().translate(None, string.punctuation)
+
+def stem(string):
+    """
+    Lemmatize and stem string.
+    """
+    return Stemmer.stem(Lemmatizer.lemmatize(string))
 
 if __name__=='__main__':
     # Just for testing

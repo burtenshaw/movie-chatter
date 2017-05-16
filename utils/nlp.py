@@ -267,8 +267,8 @@ def isQuestion(message):
     return False
 
 
-def cleanString(string):
-    return string.lower().translate(None, string.punctuation)
+def cleanString(mystring):
+    return mystring.lower().translate(None, string.punctuation)
 
 def stem(string):
     """

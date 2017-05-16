@@ -57,14 +57,20 @@ class actorAdapter(LogicAdapter):
         super(actorAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
+        if movies.context.movie() is None:
+            return False
         words = ['actor','performer','star']
-        statement_text = statement.text.translate(None,string.punctuation)
-        similarity = nlp.levensteinWord(statement_text.lower().split(), words)
-        threshold = 0.8
-        if similarity >= threshold:
+        statement_text = nlp.cleanString(statement.text)
+        if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
             return True
         else:
             return False
+        # similarity = nlp.levensteinWord(statement_text.lower().split(), words)
+        # threshold = 0.8
+        # if similarity >= threshold:
+        #     return True
+        # else:
+        #     return False
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -141,24 +147,20 @@ class aboutAdapter(LogicAdapter):
         super(aboutAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-
+        if movies.context.movie() is None:
+            return False
         words = ['about','explain','information']
         statement_text = statement.text.translate(None,string.punctuation)
-        similarity = nlp.levensteinWord(statement_text.lower().split(), words)
-        threshold = 0.5
-        if similarity >= threshold and movies.context.movie() != None:
-            return 1
-        else:
-            return 0
-        # if any(x in statement.text.split() for x in words):
+        # similarity = nlp.levensteinWord(statement_text.lower().split(), words)
+        # threshold = 0.5
+        # if similarity >= threshold and movies.context.movie() != None:
         #     return 1
         # else:
         #     return 0
-        if any(nlp.stem(x) in [nlp.stem(w) for w in statement_text.split()] for x in words):
-            #if len(movies.context) > 0:
-            return 1
+        if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
+            return True
         else:
-            return 0
+            return False
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -182,16 +184,20 @@ class movieAdapter(LogicAdapter):
     def can_process(self, statement):
         words = ['movie','film','watch']
         statement_text = statement.text.translate(None,string.punctuation)
-        similarity = nlp.levensteinWord(statement_text.lower().split(), words)
-        threshold = 0.8
-        if similarity >= threshold:
-            return 1
-        else:
-            return 0
+        # similarity = nlp.levensteinWord(statement_text.lower().split(), words)
+        # threshold = 0.8
+        # if similarity >= threshold:
+        #     return 1
+        # else:
+        #     return 0
         # if any(x in statement.text.split() for x in words):
         #     return 1
         # else:
         #     return 0
+        if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
+            return True
+        else:
+            return False
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -226,19 +232,24 @@ class ratingAdapter(LogicAdapter):
         super(ratingAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
+        if movies.context.movie() is None:
+            return False
         words = ['rating','popular','good','like']
-        #Don't use this if no context is set
         statement_text = statement.text.translate(None,string.punctuation)
-        similarity = nlp.levensteinWord(statement.text.lower().split(), words)
-        threshold = 0.8
-        if similarity >= threshold and movies.context.movie() != None:
-            return 1
-        else:
-            return 0
+        # similarity = nlp.levensteinWord(statement.text.lower().split(), words)
+        # threshold = 0.8
+        # if similarity >= threshold and movies.context.movie() != None:
+        #     return 1
+        # else:
+        #     return 0
         # if any(x in statement_text.split() for x in words):
         #     return True
         # else:
         #     return False
+        if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
+            return True
+        else:
+            return False
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -262,20 +273,23 @@ class writerAdapter(LogicAdapter):
 
     def can_process(self, statement):
         words = ['writer']
-        #remove punctuation
+        if movies.context.movie() is None:
+            return False
         statement_text = statement.text.translate(None,string.punctuation)
-        #Don't use this if no context is set
-        statement_text = statement.text.translate(None,string.punctuation)
-        similarity = nlp.jaccard_sim(statement_text.lower().split(), words)
-        threshold = 0.5
-        if similarity >= threshold and movies.context.movie() != None:
-            return 1
-        else:
-            return 0
+        # similarity = nlp.jaccard_sim(statement_text.lower().split(), words)
+        # threshold = 0.5
+        # if similarity >= threshold and movies.context.movie() != None:
+        #     return 1
+        # else:
+        #     return 0
         # if any(x in statement.text.split() for x in words):
         #     return 1
         # else:
         #     return 0
+        if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
+            return True
+        else:
+            return False
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -293,16 +307,19 @@ class GenreAdapter(LogicAdapter):
     def can_process(self, statement):
         words = ['action','comedy', 'documentary', 'family', 'adventure', 'biography', 'crime','drama','romance','fantasy', 'horror', 'war','musical',
         'sport', 'thriller', 'western','music','history','thriller']
+        if movies.context.movie() is None:
+            return False
         statement_text = statement.text.translate(None,string.punctuation)
-        if len(movies.context) == 0:
-            return 0
-        statement_text = statement.text.translate(None,string.punctuation)
-        similarity = nlp.jaccard_sim(statement_text.lower().split(), words)
-        threshold = 0.5
-        if similarity >= threshold:
-            return 1
+        # similarity = nlp.jaccard_sim(statement_text.lower().split(), words)
+        # threshold = 0.5
+        # if similarity >= threshold:
+        #     return 1
+        # else:
+        #     return 0
+        if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
+            return True
         else:
-            return 0
+            return False
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
@@ -318,8 +335,16 @@ class GenreAdapter(LogicAdapter):
 
 
 if __name__ == '__main__':
-    import imdb
-    ia = imdb.IMDb()
-    Movie = ia.search_movie("the godfather")[0]
-    print Movie.__class__
-    print Movie['title']
+    words = ['movie','film','watch']
+    statement_text = 'movie'
+    print [nlp.stem(word) for word in statement_text.split()]
+    if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
+    # if any([nlp.stem(word) for word in words]) in [nlp.stem(word) for word in statement_text.split()]:
+        print "Success!"
+    else:
+        print "Failed"
+    # import imdb
+    # ia = imdb.IMDb()
+    # Movie = ia.search_movie("the godfather")[0]
+    # print Movie.__class__
+    # print Movie['title']

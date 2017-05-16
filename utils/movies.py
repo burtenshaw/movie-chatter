@@ -6,6 +6,8 @@ from class_movie import Movie
 import nlp
 import corpus
 
+from context import Context
+
 # Create the object that will be used to access the IMDb's database.
 ia = imdb.IMDb()
 
@@ -18,7 +20,7 @@ top_250_list = []
 for i in top250:
     top_250_list.append(i.movieID)
 # Movie Chat tools
-context = []
+context = Context()
 # TODO : A list of phrases with movies in
 movies_dialogue_history = []
 
@@ -138,7 +140,7 @@ def writer(imdb_movie):
         return imdb_movie['writer']
     except IndexError:
         return []
-        
+
 # For building further Dataset:
 
 def faqSplitter(movie):

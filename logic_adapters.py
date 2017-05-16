@@ -49,13 +49,13 @@ class actorAdapter(LogicAdapter):
         similarity = nlp.levensteinWord(statement.text.lower().split(), words)
         threshold = 0.5
         if similarity >= threshold:
-            return 1
+            return True
         else:
-            return 0
+            return False
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
-        context = movies.context[0]
+        context = movies.context.movie()
 
         response = self.enumerate(context)
 
@@ -81,7 +81,7 @@ class faqAdapter(LogicAdapter):
     def can_process(self, statement):
         """
         Checks if faqAdapter can process the statement.
-        
+
         return True if the statement is found to be similar to a FAQ.
         """
         # NAIVE
@@ -91,7 +91,10 @@ class faqAdapter(LogicAdapter):
 
         # SMARTER
         threshold = 0.5
-        context = movies.context[0]
+        context = movies.context.movie()
+
+        if context == None:
+            return False
 
         # If no FAQs were found, skip
         raw_faqs = movies.faqSplitter(context)
@@ -125,7 +128,7 @@ class faqAdapter(LogicAdapter):
 
     def process(self, statement):
         response = default_response()
-        context = movies.context[0]
+        context = movies.context.movie()
         # question = raw_input("What would you like to know?\n")
         question = statement.text
 
@@ -157,7 +160,7 @@ class aboutAdapter(LogicAdapter):
         statement.text = statement.text.translate(None,string.punctuation)
         similarity = nlp.levensteinWord(statement.text.lower().split(), words)
         threshold = 0.5
-        if similarity >= threshold:
+        if similarity >= threshold and movies.context.movie() != None:
             return 1
         else:
             return 0
@@ -169,12 +172,12 @@ class aboutAdapter(LogicAdapter):
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
-        context = movies.context[0]
+        context = movies.context.movie()
         val = raw_input("Do you know %s?\n" %(str(context)))
 
         if any(x in val for x in nlp.positives):
             print "Something you might not know is ..."
-            response.text = movies.trivia(movies.context[0])
+            response.text = movies.trivia(movies.context.movie())
             response.confidence = 1
         else:
             response.text = movies.plot(context)
@@ -187,7 +190,7 @@ class movieAdapter(LogicAdapter):
         super(movieAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        words = ['movie','film','watch']        
+        words = ['movie','film','watch']
         statement.text = statement.text.translate(None,string.punctuation)
         similarity = nlp.levensteinWord(statement.text.lower().split(), words)
         threshold = 0.5
@@ -213,10 +216,11 @@ class movieAdapter(LogicAdapter):
         val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director[0]))
 
         if any(x in val for x in nlp.positives):
+            movies.context.upgradeMovie(movie)
             similar = movies.similarMovie(movie[2])
             response.text = "How about %s?" %(str(similar))
             response.confidence = 1
-            movies.context.append(similar)
+            movies.context.upgradeMovie(similar)
 
         else:
             response.confidence = 0
@@ -230,12 +234,10 @@ class ratingAdapter(LogicAdapter):
     def can_process(self, statement):
         words = ['rating','popular','good','like']
         #Don't use this if no context is set
-        if len(movies.context) == 0:
-            return 0
         statement.text = statement.text.translate(None,string.punctuation)
         similarity = nlp.levensteinWord(statement.text.lower().split(), words)
         threshold = 0.5
-        if similarity >= threshold:
+        if similarity >= threshold  and movies.context.movie() != None:
             return 1
         else:
             return 0
@@ -246,7 +248,7 @@ class ratingAdapter(LogicAdapter):
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
-        context = movies.context[0]
+        context = movies.context.movie()
         rating = movies.rating(context)
         response.text = "The movie is rated " + str(rating) + "/10."
         if rating > 6:
@@ -268,12 +270,10 @@ class writerAdapter(LogicAdapter):
         #remove punctuation
         statement.text = statement.text.translate(None,string.punctuation)
         #Don't use this if no context is set
-        if len(movies.context) == 0:
-            return 0
         statement.text = statement.text.translate(None,string.punctuation)
         similarity = nlp.levensteinWord(statement.text.lower().split(), words)
         threshold = 0.5
-        if similarity >= threshold:
+        if similarity >= threshold and movies.context.movie() != None:
             return 1
         else:
             return 0
@@ -284,7 +284,7 @@ class writerAdapter(LogicAdapter):
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
-        context = movies.context[0]
+        context = movies.context.movie()
         writers = [writer['name'] for writer in movies.writer(context)]
         response.text = "The writers of the movie are: \n" + format(writers)
         response.confidence = 1
@@ -311,7 +311,7 @@ class GenreAdapter(LogicAdapter):
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
-        context = movies.context[0]
+        context = movies.context.movie()
         films = movies.genreMovies(context)
         answer =  "Some movies in this genre are: \n"
         for mov in films:
@@ -343,4 +343,3 @@ if __name__ == '__main__':
     # assert(f.can_process(Statement('May I ask you something?')))
     # assert(not f.can_process(Statement("What is this movie's rating?")))
     # assert(not f.can_process(Statement("Who stars in this movie?")))
-

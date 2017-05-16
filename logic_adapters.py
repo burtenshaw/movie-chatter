@@ -177,7 +177,7 @@ class aboutAdapter(LogicAdapter):
 
         if any(x in val for x in nlp.positives):
             print "Something you might not know is ..."
-            response.text = movies.trivia(movies.context.movie())
+            response.text = movies.trivia(context)
             response.confidence = 1
         else:
             response.text = movies.plot(context)
@@ -213,16 +213,18 @@ class movieAdapter(LogicAdapter):
             fav_movie = raw_input("I don't know that one. Any others? \n")
             movie = movies.getMovie(fav_movie)
 
+        movies.context.upgradeMovie(movie[2])
         val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director[0]))
 
         if any(x in val for x in nlp.positives):
-            movies.context.upgradeMovie(movie)
+
             similar = movies.similarMovie(movie[2])
             response.text = "How about %s?" %(str(similar))
             response.confidence = 1
             movies.context.upgradeMovie(similar)
 
         else:
+            response.text = ''
             response.confidence = 0
 
         return response
@@ -251,6 +253,7 @@ class ratingAdapter(LogicAdapter):
         context = movies.context.movie()
         rating = movies.rating(context)
         response.text = "The movie is rated " + str(rating) + "/10."
+        add = ''
         if rating > 6:
             add = "\nIn general, people seem to like it."
             if rating > 8:

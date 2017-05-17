@@ -150,7 +150,7 @@ class aboutAdapter(LogicAdapter):
         if movies.context.movie() is None:
             return False
         words = ['about','explain','information']
-        statement_text = statement.text.translate(None,string.punctuation)
+        statement_text = nlp.cleanString(statement.text)
         # similarity = nlp.levensteinWord(statement_text.lower().split(), words)
         # threshold = 0.5
         # if similarity >= threshold and movies.context.movie() != None:
@@ -164,10 +164,11 @@ class aboutAdapter(LogicAdapter):
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
-        context = movies.context.movie()
+        context = extractMovieContext(movies.context,statement)
+        movies.context.upgradeMovie(context)
         val = raw_input("Do you know %s?\n" %(str(context)))
 
-        if any(x in val for x in nlp.positives):
+        if any(x in val.lower() for x in nlp.positives() + ['i do']):
             print "Something you might not know is ..."
             response.text = movies.trivia(context)
             response.confidence = 1
@@ -183,7 +184,7 @@ class movieAdapter(LogicAdapter):
 
     def can_process(self, statement):
         words = ['movie','film','watch']
-        statement_text = statement.text.translate(None,string.punctuation)
+        statement_text = nlp.cleanString(statement.text)
         # similarity = nlp.levensteinWord(statement_text.lower().split(), words)
         # threshold = 0.8
         # if similarity >= threshold:
@@ -212,14 +213,18 @@ class movieAdapter(LogicAdapter):
         movies.context.upgradeMovie(movie[2])
         val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director[0]))
 
-        if any(x in val for x in nlp.positives):
+        if any(x in val.lower() for x in nlp.positives() + ['i do']):
 
             similar = movies.similarMovie(movie[2])
-            response.text = "How about %s?" %(str(similar))
-            response.confidence = 1
-            movies.context.upgradeMovie(
-                movies.imdbMovie(movies.getMovie(str(similar)))
-            )
+            if similar ==  None:
+                response.text = 'Sorry, we couldn\'t find any similar movies.'
+                response.confidence = 1
+            else:
+                response.text = "How about %s?" %(str(similar))
+                response.confidence = 1
+                movies.context.upgradeMovie(
+                    movies.imdbMovie(movies.getMovie(str(similar)))
+                )
 
         else:
             response.text = ''
@@ -235,7 +240,7 @@ class ratingAdapter(LogicAdapter):
         if movies.context.movie() is None:
             return False
         words = ['rating','popular','good','like']
-        statement_text = statement.text.translate(None,string.punctuation)
+        statement_text = nlp.cleanString(statement.text)
         # similarity = nlp.levensteinWord(statement.text.lower().split(), words)
         # threshold = 0.8
         # if similarity >= threshold and movies.context.movie() != None:
@@ -272,10 +277,10 @@ class writerAdapter(LogicAdapter):
         super(writerAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        words = ['writer']
+        words = ['writer', 'wrote','written']
         if movies.context.movie() is None:
             return False
-        statement_text = statement.text.translate(None,string.punctuation)
+        statement_text = nlp.cleanString(statement.text)
         # similarity = nlp.jaccard_sim(statement_text.lower().split(), words)
         # threshold = 0.5
         # if similarity >= threshold and movies.context.movie() != None:
@@ -309,7 +314,7 @@ class GenreAdapter(LogicAdapter):
         'sport', 'thriller', 'western','music','history','thriller']
         if movies.context.movie() is None:
             return False
-        statement_text = statement.text.translate(None,string.punctuation)
+        statement_text = nlp.cleanString(statement.text)
         # similarity = nlp.jaccard_sim(statement_text.lower().split(), words)
         # threshold = 0.5
         # if similarity >= threshold:

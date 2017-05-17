@@ -103,8 +103,14 @@ def similarMovie(imdb_movie):
     # Take one of the top 5 movies from "people also liked"
     ia.update(imdb_movie, 'recommendations')
     rand = random.randint(0, 4)
-    nearest = ia.get_movie_recommendations(imdb_movie.movieID)['data']['recommendations']['database'][0:5]
-    return nearest[rand]
+    try:
+        nearest = ia.get_movie_recommendations(imdb_movie.movieID)['data']['recommendations']['database'][0:5]
+        return str(nearest[rand])
+    except UnicodeDecodeError:
+        rand = random.randint(0, 4)
+        return str(nearest[rand])
+    except:
+        return None
 
 def trivia(imdb_movie):
     # Take a random piece of trivia about a movie.
@@ -117,6 +123,10 @@ def plot(imdb_movie):
     # Take the first sentence from the plot.
     ia.update(imdb_movie, 'plot')
     plot = ia.get_movie_plot(imdb_movie.movieID)['data']['plot'][0]
+    try:
+        plot = str(plot)
+    except:
+        plot = 'Me neither, sorry.'
     return plot
 
 def rating(imdb_movie):

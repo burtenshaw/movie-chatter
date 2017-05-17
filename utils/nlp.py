@@ -4,6 +4,7 @@ import string
 from collections import defaultdict
 from nltk import word_tokenize
 from nltk.tag import pos_tag
+from nltk.corpus import wordnet as wn
 import numpy as np
 from pattern.web import Twitter, hashtags
 import requests
@@ -155,7 +156,7 @@ def levenstein(query, dataset):
                 x = edit_distance(w1, w2)
                 if x > score[0]:
                     score = (x, l[1])
-    return 
+    return
 
 
 def levensteinWord(query, dataset):
@@ -225,11 +226,11 @@ def movie_comparison(statement, other_statement, data='data/keywords_dictionary.
     # For testing purposes: read in keywords from top 250 movies in JSON format
     #                       Title is at first index, ID at second, list of keywords at third
     keywords = defaultdict(list,{movie[0]: movie[2] for movie in corpus.load(data)})
-    
+
     # Find best match of movie title in statement
     title_1 = getBestMatch(statement,keywords.keys())
     title_2 = getBestMatch(other_statement,keywords.keys())
-    print title_1, 'extracted from', statement 
+    print title_1, 'extracted from', statement
     print title_2, 'extracted from', other_statement
 
     # Extract keywords for both titles
@@ -289,8 +290,18 @@ else:
 # tweets = tweetCrawl(search_term, cnt)
 
 
-# expand into function based on synset
-positives = ['yes','ok','sure']
+def positives():
+    positives = ['yes','ok','sure','positive','affirmative']
+    #Find synonyms
+    synonyms = set(positives)
+    for word in positives:
+        for synonym in wn.synsets(word):
+            for lemma in synonym.lemma_names():
+                synonyms.add(lemma)
+
+    #remove duplicates
+    positives = list(synonyms)
+    return positives
 
 def isQuestion(message):
     """
@@ -313,4 +324,5 @@ def stem(string):
 
 if __name__=='__main__':
     # Just for testing
-    print movie_comparison('I thought The Godfather was amazing!', 'I loved The Godfather a lot!')
+    # print movie_comparison('I thought The Godfather was amazing!', 'I loved The Godfather a lot!')
+    print positives()

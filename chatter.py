@@ -71,7 +71,10 @@ while True:
     try:
         # We pass None to this method because the parameter
         # is not used by the TerminalAdapter
-        bot_input = chatbot.get_response(None)
+        try:
+            bot_input = chatbot.get_response(None)
+        except UnicodeDecodeError:
+            pass
         print("---")
 
     # Press ctrl-c or ctrl-d on the keyboard to exit

@@ -8,6 +8,13 @@ import numpy as np
 from pattern.web import Twitter, hashtags
 import requests
 from bs4 import BeautifulSoup
+import sys
+import logging
+
+try:
+    import grequests
+except ImportError:
+    pass
 
 # Levenstein
 from nltk.metrics import *
@@ -233,20 +240,48 @@ def movie_comparison(statement, other_statement, data='data/keywords_dictionary.
 
 # Twitter crawler for Training.
 
-def tweetCrawl(search_term, cnt):
-    '''
-    Search Twitter for a term and return (cnt) number of tweets as a list of tuples of tweet and first response.
-    '''
-    twitter = Twitter(language='en')
-    tweets = twitter.search(search_term, cached=False, count=cnt)
-    pairs = []
-    for t in tweets:
-        try:
-            replies = [i.get_text() for i in BeautifulSoup(requests.get(t['url']).content, 'html.parser').select(".tweet-text")]
-            pairs.append((t['text'],replies[1]))
-        except IndexError:
-            pass
-    return pairs
+# if grequests not available, fall back to synchronous requests
+if 'grequests' in sys.modules:
+    def tweetCrawl(search_term, cnt):
+        '''
+        Search Twitter for a term and return (cnt) number of tweets as a list of tuples of tweet and first response.
+        '''
+        def handleResponse(tweet, pairs, response):
+            replies = [i.get_text() for i in BeautifulSoup(response.content, 'html.parser').select('.tweet-text')]
+            
+            if len(replies) >= 2:
+                pairs.append((tweet, replies[1]))
+
+        def handleException(request, exception):
+            raise exception
+
+        twitter = Twitter(language='en')
+        tweets = twitter.search(search_term, cached=False, count=cnt)
+
+        pairs = []
+
+        asyncRequests = (grequests.get(tweet['url'],
+            callback=lambda response, **kwargs: handleResponse(tweet, pairs, response)) for tweet in tweets)
+
+        grequests.map(asyncRequests, exception_handler=handleException)
+
+        return pairs
+else:
+    def tweetCrawl(search_term, cnt):
+        '''
+        Search Twitter for a term and return (cnt) number of tweets as a list of tuples of tweet and first response.
+        '''
+        logging.warning("Calling tweetCrawl without grequests installed, which handles requests asynchronously.")
+        twitter = Twitter(language='en')
+        tweets = twitter.search(search_term, cached=False, count=cnt)
+        pairs = []
+        for t in tweets:
+            try:
+                replies = [i.get_text() for i in BeautifulSoup(requests.get(t['url']).content, 'html.parser').select(".tweet-text")]
+                pairs.append((t['text'],replies[1]))
+            except IndexError:
+                pass
+        return pairs
 
 ## To use tweetCrawl
 # search_term = "What movie should i watch?"

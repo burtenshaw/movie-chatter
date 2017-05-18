@@ -4,21 +4,31 @@ from imdb._exceptions import IMDbDataAccessError, IMDbError
 import random
 from class_movie import Movie
 import nlp
-import corpus
-
+import corpus,sys
+import yaml
 from context import Context
 
 # Create the object that will be used to access the IMDb's database.
 ia = imdb.IMDb()
 
 # Top 250 films
-top250 = ia.get_top250_movies()
+# top250 = ia.get_top250_movies()
 
 ## Fast index
 top_250_list = []
+top_250_list_movies = []
 
-for i in top250:
-    top_250_list.append(i.movieID)
+def setTop250_movies():
+    with open('./utils/data250.json') as data_file:    
+        data = yaml.safe_load(data_file)
+    for d in data:
+        top_250_list.append(d['id'])
+        top_250_list_movies.append(Movie(d['id'], d['title'], d['director'], d['plot'], d['rating'], d['writer'], d['genres'], d['cast'], d['year']))
+
+setTop250_movies()
+
+# for i in top250:
+#     top_250_list.append(i.movieID)
 # Movie Chat tools
 context = Context()
 # TODO : A list of phrases with movies in
@@ -53,18 +63,23 @@ def getMovie(input_phrase):
     except KeyError:
         # Handle unknown director
         director = "Unknown"
-    film = Movie(movie.movieID, title, movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
+    film = Movie(movie.movieID, title, movie['director'][0], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
     response = (film,True, movie)
     return response
 
+def genre(imdb_movie):
+    ia.update(imdb_movie)
+    return imdb_movie['genre']
+
 def genreMovies(input_phrase):
     movies = []
+    print 'please wait. we are finding movies ...'
     for movie in top250:
         ia.update(movie)
-        if input_phrase in movie['genre']:
-            film = Movie(movie.movieID, movie['title'], movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
+        film = Movie(movie.movieID, movie['title'], movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
+        if input_phrase in map(lambda x:x.lower(), film.genres):
             movies.append(film)
-            if len(movies) > 5:
+            if len(movies) > 1:
                 break
 
     return movies
@@ -197,3 +212,4 @@ def imdbMovie(movie_tuple):
     assert(len(movie_tuple) == 3)
 
     return movie_tuple[2]
+

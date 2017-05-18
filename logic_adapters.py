@@ -11,6 +11,17 @@ conversation_history = []
 
 
 def extractMovieContext(context, statement):
+    # If last 2 mentions were of same movie, set it as the primary movie.
+    count = 2
+    if len(context.mentionedMovies) >= 2:
+        start = context.mentionedMovies[0]
+        same = True
+        for i in range(count):
+            if context.mentionedMovies[i] != start:
+                same = False
+        if same:
+            context.upgradeMovie(start)
+
     movie = context.movie()
     statement_txt = nlp.cleanString(statement.text)
 
@@ -21,6 +32,10 @@ def extractMovieContext(context, statement):
         if nlp.cleanString(title) in statement_txt:
             movie = movies.context.movieByTitle(title)
             break
+
+    # The movie was mentioned.
+    context.mentionMovie(movie)
+
     return movie
 
 def default_response():
@@ -97,6 +112,9 @@ class faqAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(faqAdapter, self).__init__(**kwargs)
 
+        # Multiplication factor for confidence. Lower the FAQ to prioritize other logicAdapters.
+        self.dampening_factor = 0.7
+
     def can_process(self, statement):
         """
         Checks if faqAdapter can process the statement.
@@ -125,17 +143,19 @@ class faqAdapter(LogicAdapter):
         # If no FAQs were found, skip
         raw_faqs = movies.faqSplitter(context)
         if raw_faqs:
-            # Convert unicode strings to python strings
-            faq_list = []
-            for faq in raw_faqs:
-                faq_list.append([faq[0].encode('utf-8'), faq[1].encode('utf-8')])
-
             max_conf = -1
-            for (q, a) in faq_list:
-                if self.similar(question, q) > max_conf:
-                    max_conf = self.similar(question, q)
-                    response.confidence = max_conf
-                    response.text = a
+            for (q, a) in raw_faqs:
+                try:
+                    similarity = self.similar(question, q.encode('utf-8'))
+                    if similarity > max_conf:
+                        max_conf = similarity
+                        response.text = a
+                except UnicodeEncodeError as e:
+                    # This happens when reading links.
+                    # TODO: fix or remove after development.
+                    print "failed to parse answer"
+                    continue
+            response.confidence = (max_conf * self.dampening_factor)
 
         return response
 
@@ -175,7 +195,7 @@ class aboutAdapter(LogicAdapter):
         else:
             response.text = movies.plot(context)
             response.confidence = 0.7
-        maxSimilarity = 0
+
         return response
 
 class movieAdapter(LogicAdapter):
@@ -185,6 +205,7 @@ class movieAdapter(LogicAdapter):
     def can_process(self, statement):
         words = ['movie','film','watch']
         statement_text = nlp.cleanString(statement.text)
+        # print statement_text
         # similarity = nlp.levensteinWord(statement_text.lower().split(), words)
         # threshold = 0.8
         # if similarity >= threshold:
@@ -201,6 +222,7 @@ class movieAdapter(LogicAdapter):
             return False
 
     def process(self, statement):
+        movie = None
         response = collections.namedtuple('response', 'text confidence')
         fav_movie = raw_input("What's your favorite film? Maybe we can find something similar.\n")
         # Get the movie
@@ -211,7 +233,7 @@ class movieAdapter(LogicAdapter):
             movie = movies.getMovie(fav_movie)
 
         movies.context.upgradeMovie(movie[2])
-        val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director[0]))
+        val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director))
 
         if any(x in val.lower() for x in nlp.positives() + ['i do']):
 
@@ -310,10 +332,9 @@ class GenreAdapter(LogicAdapter):
         super(GenreAdapter, self).__init__(**kwargs)
         #Phrase 'wanna see some action tonight.'
     def can_process(self, statement):
-        words = ['action','comedy', 'documentary', 'family', 'adventure', 'biography', 'crime','drama','romance','fantasy', 'horror', 'war','musical',
+        words = ['genre','category','action','comedy', 'documentary', 'family', 'adventure', 'biography', 'crime','drama','romance','fantasy', 'horror', 'war','musical',
         'sport', 'thriller', 'western','music','history','thriller']
-        if movies.context.movie() is None:
-            return False
+
         statement_text = nlp.cleanString(statement.text)
         # similarity = nlp.jaccard_sim(statement_text.lower().split(), words)
         # threshold = 0.5
@@ -329,27 +350,52 @@ class GenreAdapter(LogicAdapter):
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
         context = movies.context.movie()
-        films = movies.genreMovies(context)
-        answer =  "Some movies in this genre are: \n"
-        for mov in films:
-            answer += "Title " +mov.title + ",  Rated: " + str(mov.rating) + '\n'
-        response.text = answer
-        response.confidence = 1
+        genre = movies.genre(context)
+        resp = raw_input("the movie belong to this genres: %s. would you like to look for other genre options? \n"%genre)
+
+        if any(x in resp.lower() for x in nlp.positives() + ['i do']):
+            resp = raw_input("what do you like to see tonight? \n")
+            films = movies.genreMovies(resp)
+            if len(films) != 0:
+                answer =  "Some movies in this genre are: \n"
+                for mov in films:
+                    answer += "Title: " + str(mov.title) + ",directed by: " + str(mov.director[0]) + "  Rated: " + str(mov.rating) + "\n"
+                print answer
+                fav_movie = raw_input("select what movie do you like to see !!! \n")
+                # Get the movie
+                try:
+                    movie = movies.getMovie(fav_movie)
+                except IndexError:
+                    fav_movie = raw_input("I don't know that one. Any others? \n")
+                    movie = movies.getMovie(fav_movie)
+                movies.context.upgradeMovie(movie[2])
+                val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director))
+                if any(x in resp.lower() for x in nlp.positives() + ['i do']):
+                    response.text = 'ejoy the movie !!!'
+                    response.confidence = 1
+                else:
+                    similar = movies.similarMovie(movie[2])
+                    if similar ==  None:
+                        response.text = 'Sorry, we couldn\'t find any similar movies.'
+                        response.confidence = 1
+                    else:
+                        response.text = "How about %s?" %(str(similar))
+                        response.confidence = 1
+                        movies.context.upgradeMovie(
+                            movies.imdbMovie(movies.getMovie(str(similar)))
+                        )
+            else:
+                response.text = 'sorry! we couldnt find any movie in this genre'
+                response.confidence = 0
 
         return response
 
 
 if __name__ == '__main__':
-    words = ['movie','film','watch']
-    statement_text = 'movie'
-    print [nlp.stem(word) for word in statement_text.split()]
-    if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
-    # if any([nlp.stem(word) for word in words]) in [nlp.stem(word) for word in statement_text.split()]:
-        print "Success!"
-    else:
-        print "Failed"
-    # import imdb
-    # ia = imdb.IMDb()
-    # Movie = ia.search_movie("the godfather")[0]
-    # print Movie.__class__
-    # print Movie['title']
+    from utils import context
+    from chatterbot.conversation.statement import Statement
+
+    movies.context = context.Context()
+    movies.context.upgradeMovie(movies.imdbMovie(movies.getMovie("the godfather")))
+    faq = faqAdapter()
+    print faq.process(Statement("what is the godfather about?")).text

@@ -52,6 +52,9 @@ chatbot = ChatBot("Terminal",
         {
             'import_path': 'logic_adapters.writerAdapter',
         },
+        {
+        	'import_path': 'logic_adapters.GenreAdapter',
+        },
     ],
     input_adapter="chatterbot.input.TerminalAdapter",
     output_adapter="chatterbot.output.TerminalAdapter",
@@ -71,10 +74,14 @@ while True:
     try:
         # We pass None to this method because the parameter
         # is not used by the TerminalAdapter
-        try:
-            bot_input = chatbot.get_response(None)
-        except UnicodeDecodeError:
-            pass
+        # try:
+        bot_input = chatbot.get_response(None)
+        # except UnicodeDecodeError as e:
+        #     # TODO: remove after development!!!
+        #     print "Got error:"
+        #     print e
+        #
+        #     pass
         print("---")
 
     # Press ctrl-c or ctrl-d on the keyboard to exit

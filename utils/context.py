@@ -5,6 +5,14 @@ class Context():
     def __init__(self):
         self.movies = []
         self.people = []
+        self.mentionedMovies = []
+        self.mentionedPeople = []
+
+    def mentionPerson(self, person):
+        self.mentionedPeople.insert(0, person)
+
+    def mentionMovie(self, movie):
+        self.mentionedMovies.insert(0, movie)
 
     def upgradeMovie(self,movie):
         assert(isinstance(movie, imdb.Movie.Movie))

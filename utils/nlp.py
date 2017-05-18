@@ -251,7 +251,7 @@ if 'grequests' in sys.modules:
             replies = [i.get_text() for i in BeautifulSoup(response.content, 'html.parser').select('.tweet-text')]
             
             if len(replies) >= 2:
-                pairs.append((tweet, replies[1]))
+                pairs.append((tweet['text'], replies[1]))
 
         def handleException(request, exception):
             raise exception

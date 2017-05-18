@@ -97,6 +97,9 @@ class faqAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(faqAdapter, self).__init__(**kwargs)
 
+        # Multiplication factor for confidence. Lower the FAQ to prioritize other logicAdapters.
+        self.dampening_factor = 0.7
+
     def can_process(self, statement):
         """
         Checks if faqAdapter can process the statement.
@@ -125,17 +128,19 @@ class faqAdapter(LogicAdapter):
         # If no FAQs were found, skip
         raw_faqs = movies.faqSplitter(context)
         if raw_faqs:
-            # Convert unicode strings to python strings
-            faq_list = []
-            for faq in raw_faqs:
-                faq_list.append([faq[0].encode('utf-8'), faq[1].encode('utf-8')])
-
             max_conf = -1
-            for (q, a) in faq_list:
-                if self.similar(question, q) > max_conf:
-                    max_conf = self.similar(question, q)
-                    response.confidence = max_conf
-                    response.text = a
+            for (q, a) in raw_faqs:
+                try:
+                    similarity = self.similar(question, q.encode('utf-8'))
+                    if similarity > max_conf:
+                        max_conf = similarity
+                        response.text = a
+                except UnicodeEncodeError as e:
+                    # This happens when reading links.
+                    # TODO: fix or remove after development.
+                    print "failed to parse answer"
+                    continue
+            response.confidence = (max_conf * self.dampening_factor)
 
         return response
 
@@ -175,7 +180,7 @@ class aboutAdapter(LogicAdapter):
         else:
             response.text = movies.plot(context)
             response.confidence = 0.7
-        maxSimilarity = 0
+
         return response
 
 class movieAdapter(LogicAdapter):
@@ -201,6 +206,7 @@ class movieAdapter(LogicAdapter):
             return False
 
     def process(self, statement):
+        movie = None
         response = collections.namedtuple('response', 'text confidence')
         fav_movie = raw_input("What's your favorite film? Maybe we can find something similar.\n")
         # Get the movie
@@ -340,16 +346,10 @@ class GenreAdapter(LogicAdapter):
 
 
 if __name__ == '__main__':
-    words = ['movie','film','watch']
-    statement_text = 'movie'
-    print [nlp.stem(word) for word in statement_text.split()]
-    if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
-    # if any([nlp.stem(word) for word in words]) in [nlp.stem(word) for word in statement_text.split()]:
-        print "Success!"
-    else:
-        print "Failed"
-    # import imdb
-    # ia = imdb.IMDb()
-    # Movie = ia.search_movie("the godfather")[0]
-    # print Movie.__class__
-    # print Movie['title']
+    from utils import context
+    from chatterbot.conversation.statement import Statement
+
+    movies.context = context.Context()
+    movies.context.upgradeMovie(movies.imdbMovie(movies.getMovie("the godfather")))
+    faq = faqAdapter()
+    print faq.process(Statement("what is the godfather about?")).text

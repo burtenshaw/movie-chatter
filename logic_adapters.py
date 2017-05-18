@@ -11,6 +11,17 @@ conversation_history = []
 
 
 def extractMovieContext(context, statement):
+    # If last 2 mentions were of same movie, set it as the primary movie.
+    count = 2
+    if len(context.mentionedMovies) >= 2:
+        start = context.mentionedMovies[0]
+        same = True
+        for i in range(count):
+            if context.mentionedMovies[i] != start:
+                same = False
+        if same:
+            context.upgradeMovie(start)
+
     movie = context.movie()
     statement_txt = nlp.cleanString(statement.text)
 
@@ -21,6 +32,10 @@ def extractMovieContext(context, statement):
         if nlp.cleanString(title) in statement_txt:
             movie = movies.context.movieByTitle(title)
             break
+
+    # The movie was mentioned.
+    context.mentionMovie(movie)
+
     return movie
 
 def default_response():
@@ -190,7 +205,7 @@ class movieAdapter(LogicAdapter):
     def can_process(self, statement):
         words = ['movie','film','watch']
         statement_text = nlp.cleanString(statement.text)
-        print statement_text
+        # print statement_text
         # similarity = nlp.levensteinWord(statement_text.lower().split(), words)
         # threshold = 0.8
         # if similarity >= threshold:

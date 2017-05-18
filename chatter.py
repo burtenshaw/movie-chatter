@@ -52,6 +52,9 @@ chatbot = ChatBot("Terminal",
         {
             'import_path': 'logic_adapters.writerAdapter',
         },
+        {
+        	'import_path': 'logic_adapters.GenreAdapter',
+        },
     ],
     input_adapter="chatterbot.input.TerminalAdapter",
     output_adapter="chatterbot.output.TerminalAdapter",

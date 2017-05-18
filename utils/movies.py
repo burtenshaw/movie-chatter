@@ -4,7 +4,7 @@ from imdb._exceptions import IMDbDataAccessError, IMDbError
 import random
 from class_movie import Movie
 import nlp
-import corpus
+import corpus,sys
 
 from context import Context
 
@@ -53,18 +53,23 @@ def getMovie(input_phrase):
     except KeyError:
         # Handle unknown director
         director = "Unknown"
-    film = Movie(movie.movieID, title, movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
+    film = Movie(movie.movieID, title, movie['director'][0], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
     response = (film,True, movie)
     return response
 
+def genre(imdb_movie):
+    ia.update(imdb_movie)
+    return imdb_movie['genre']
+
 def genreMovies(input_phrase):
     movies = []
+    print 'please wait. we are finding movies ...'
     for movie in top250:
         ia.update(movie)
-        if input_phrase in movie['genre']:
-            film = Movie(movie.movieID, movie['title'], movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
+        film = Movie(movie.movieID, movie['title'], movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
+        if input_phrase in map(lambda x:x.lower(), film.genres):
             movies.append(film)
-            if len(movies) > 5:
+            if len(movies) > 1:
                 break
 
     return movies

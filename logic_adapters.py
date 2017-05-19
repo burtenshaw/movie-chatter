@@ -10,6 +10,23 @@ from utils import movies, nlp
 conversation_history = []
 
 
+def findStatementInStorage(logicAdapter, statement):
+    """
+    Is the statement stored in the logicAdapters storage?
+    
+    Checks the stored statement to be of the same type as logicAdapter.
+    """
+    for stored_statement in logicAdapter.chatbot.storage.filter():
+        try:
+            if stored_statement.extra_data['logic'] == logicAdapter.type():
+                if stored_statement.text == statement.text:
+                    return True
+
+        except KeyError:
+            # Ignore all statements without the extra_data "logic"
+            pass
+
+
 def extractMovieContext(context, statement):
     # If last 2 mentions were of same movie, set it as the primary movie.
     count = 2
@@ -106,6 +123,13 @@ class faqAdapter(LogicAdapter):
         self.default_response = kwargs['default_response']
         self.dampening_factor = 0.7
 
+    @staticmethod
+    def type():
+        """
+        Used by to generate the Statements 'logic type' when training custom phrases.
+        """
+        return 'faq'
+
     def can_process(self, statement):
         """
         Checks if faqAdapter can process the statement.
@@ -115,6 +139,11 @@ class faqAdapter(LogicAdapter):
         # Can't handle empty context
         if movies.context.movie() is None:
             return False
+
+        # If statement is in storage, we can handle it!
+        if findStatementInStorage(self, statement):
+            return True
+
         # Can handle any question.
         return nlp.isQuestion(statement.text)
 
@@ -127,30 +156,43 @@ class faqAdapter(LogicAdapter):
         return nlp.jaccard_sim(nlp.cleanString(m1), nlp.cleanString(m2))
 
     def process(self, statement):
+        # Update the context
         context = extractMovieContext(movies.context, statement)
-        response = collections.namedtuple('response', 'text confidence')
-        response.confidence = 0
-        response.text = self.default_response
-        question = statement.text
 
-        # If no FAQs were found, skip
-        raw_faqs = movies.faqSplitter(context)
-        if raw_faqs:
-            max_conf = -1
-            for (q, a) in raw_faqs:
-                try:
-                    similarity = self.similar(question, q.encode('utf-8'))
-                    if similarity > max_conf:
-                        max_conf = similarity
-                        response.text = a
-                except UnicodeEncodeError as e:
-                    # This happens when reading links.
-                    # TODO: fix or remove after development.
-                    print "failed to parse answer"
-                    continue
-            response.confidence = (max_conf * self.dampening_factor)
-        if response.confidence < self.threshold:
+        # Get all statements that are in response to the statement
+        response_list = self.chatbot.storage.filter(
+            in_response_to__contains=statement.text
+        )
+
+        # If statement was found in storage
+        if response_list:
+            response = self.select_response(statement, response_list)
+            response.confidence = 2.0
+
+        # If statement not in storage, handle it manually
+        else:
+            response = collections.namedtuple('response', 'text confidence')
+            response.confidence = 0
             response.text = self.default_response
+
+            # If no FAQs were found, skip
+            raw_faqs = movies.faqSplitter(context)
+            if raw_faqs:
+                max_conf = -1
+                for (q, a) in raw_faqs:
+                    try:
+                        similarity = self.similar(statement.text, q.encode('utf-8'))
+                        if similarity > max_conf:
+                            max_conf = similarity
+                            response.text = a
+                    except UnicodeEncodeError as e:
+                        # This happens when reading links.
+                        # TODO: fix or remove after development.
+                        print "failed to parse answer"
+                        continue
+                response.confidence = (max_conf * self.dampening_factor)
+            if response.confidence < self.threshold:
+                response.text = self.default_response
         return response
 
 
@@ -197,7 +239,7 @@ class movieAdapter(LogicAdapter):
         super(movieAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        words = ['movie','film','watch']
+        words = ['movie', 'film','watch']
         statement_text = nlp.cleanString(statement.text)
         #If user wants to know about a genre, don't give this adapter
         genre = GenreAdapter()

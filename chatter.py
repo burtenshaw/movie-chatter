@@ -1,5 +1,6 @@
 from chatterbot import ChatBot
 from chatterbot.trainers import ChatterBotCorpusTrainer, ListTrainer
+from trainers.FaqTrainer import FaqTrainer
 
 import argparse
 
@@ -71,18 +72,14 @@ chatbot.set_trainer(ChatterBotCorpusTrainer)
 # Focus is on general conversation, movies and subjects
 # closely related to movies (history, literature, ...)
 chatbot.train("chatterbot.corpus.english.conversations")
-chatbot.train("chatterbot.corpus.english.emotion")
-chatbot.train("chatterbot.corpus.english.history")
-chatbot.train("chatterbot.corpus.english.literature")
-chatbot.train("chatterbot.corpus.english.trivia")
 chatbot.train("chatterbot.corpus.english.greetings")
 chatbot.train("chatterbot.corpus.english.movies")
 
-# Add arbitrary conversation data
-chatbot.set_trainer(ListTrainer)
+# Example training data far FaqAdapter
+chatbot.set_trainer(FaqTrainer)
 chatbot.train([
-    'How are you?',
-    'I\'m great, how are you?'
+    'Is this an FAQ?',
+    'Hell, yes!'
 ])
 
 # Train the chat bot with a few responses

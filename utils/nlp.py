@@ -239,6 +239,20 @@ def movie_comparison(statement, other_statement, data='data/keywords_dictionary.
 
     return jaccard_sim(keywords_1,keywords_2)
 
+
+def statement_comparison_for_best_match(statement_1, statement_2):
+    def process(statement):
+        text = statement.text
+
+        if type(text) is not str:
+            text = text.encode('utf-8')
+
+        return cleanString(text).split()
+
+    # confidence between 0.65 and 0.75
+    return 0.65 + 0.1 * jaccard_sim(process(statement_1), process(statement_2))
+
+
 # Twitter crawler for Training.
 
 # if grequests not available, fall back to synchronous requests
@@ -322,6 +336,25 @@ def stem(string):
     """
     return Stemmer.stem(Lemmatizer.lemmatize(string))
 
+def get_human_names(text):
+    tokens = nltk.tokenize.word_tokenize(text)
+    pos = nltk.pos_tag(tokens)
+    sentt = nltk.ne_chunk(pos, binary = False)
+    person_list = []
+    person = []
+    name = ""
+    for subtree in sentt.subtrees(filter=lambda t: t.label() == 'PERSON'):
+        for leaf in subtree.leaves():
+            person.append(leaf[0])
+        if len(person) > 1: #avoid grabbing lone surnames
+            for part in person:
+                name += part + ' '
+            if name[:-1] not in person_list:
+                person_list.append(name[:-1])
+            name = ''
+        person = []
+    return person_list
+    
 if __name__=='__main__':
     # Just for testing
     # print movie_comparison('I thought The Godfather was amazing!', 'I loved The Godfather a lot!')

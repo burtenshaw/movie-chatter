@@ -9,19 +9,6 @@ import argparse
 import sys
 import logging
 
-def statement_comparison_for_best_match(statement_1, statement_2):
-    def process(statement):
-        text = statement.text
-
-        print type(text)
-
-        if type(text) is not str:
-            text = text.encode('utf-8')
-
-        return nlp.cleanString(text).split()
-
-    return nlp.jaccard_sim(process(statement_1), process(statement_2))
-
 parser = argparse.ArgumentParser()
 
 # By default use JSON storage adapter; mongodb optional.
@@ -54,7 +41,7 @@ chatbot = ChatBot("Terminal",
     logic_adapters=[
         {
             "import_path": "chatterbot.logic.BestMatch",
-            "statement_comparison_function": statement_comparison_for_best_match,
+            "statement_comparison_function": nlp.statement_comparison_for_best_match,
             "response_selection_method": "chatterbot.response_selection.get_random_response"
         }
     ],

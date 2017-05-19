@@ -75,7 +75,7 @@ chatbot.train("chatterbot.corpus.english.emotion")
 chatbot.train("chatterbot.corpus.english.history")
 chatbot.train("chatterbot.corpus.english.literature")
 chatbot.train("chatterbot.corpus.english.trivia")
-chatbot.train("chatterbot.corpus.english.introductions")
+chatbot.train("chatterbot.corpus.english.greetings")
 chatbot.train("chatterbot.corpus.english.movies")
 
 # Add arbitrary conversation data

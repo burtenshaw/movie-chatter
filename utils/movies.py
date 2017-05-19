@@ -7,6 +7,7 @@ import nlp
 import corpus,sys
 import yaml
 from context import Context
+import collections
 
 # Create the object that will be used to access the IMDb's database.
 ia = imdb.IMDb()
@@ -27,6 +28,27 @@ def setTop250_movies():
 
 setTop250_movies()
 
+people_role = collections.defaultdict(dict)
+def setPeopleRole():
+    for m in top_250_list_movies:
+        if 'director' in people_role[m.director]:
+            people_role[m.director]['director'].append(m.title)
+        else:
+            people_role[m.director]['director'] = [m.title]
+
+        for w in m.writer:
+            if 'writer' in people_role[w]:
+                people_role[w]['writer'].append(m.title)
+            else:
+                people_role[w]['writer'] = [m.title]
+
+        for c in m.cast:
+            if 'cast' in people_role[c]:
+                people_role[c]['cast'].append(m.title)
+            else:
+                people_role[c]['cast'] = [m.title]
+
+setPeopleRole()
 # for i in top250:
 #     top_250_list.append(i.movieID)
 # Movie Chat tools
@@ -222,6 +244,19 @@ def keywordData():
 
     return dataset
 
+def getPersonMaxSimilarity(names):
+    maxSimilarity = 0.0
+    moreSimilarPerson = ''
+    nameSimilar = ''
+    for name in names:
+        for person in people_role.keys():
+            sim = nlp.jaccard_sim(name,person)
+            if sim > maxSimilarity:
+                nameSimilar = name
+                maxSimilarity = sim
+                moreSimilarPerson = person
+    return (moreSimilarPerson,nameSimilar,maxSimilarity)
+    
 def imdbMovie(movie_tuple):
     """
     Extract IMDb.Movie from ((title, director), True, imdb_movie)

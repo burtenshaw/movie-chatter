@@ -289,16 +289,12 @@ class writerAdapter(LogicAdapter):
 
     def can_process(self, statement):
         words = ['writer', 'wrote','written']
-        if movies.context.movie() is None:
-            return False
+        # if movies.context.movie() is None:
+        #     return False
         statement_text = nlp.cleanString(statement.text)
         # similarity = nlp.jaccard_sim(statement_text.lower().split(), words)
         # threshold = 0.5
         # if similarity >= threshold and movies.context.movie() != None:
-        #     return 1
-        # else:
-        #     return 0
-        # if any(x in statement.text.split() for x in words):
         #     return 1
         # else:
         #     return 0
@@ -307,13 +303,27 @@ class writerAdapter(LogicAdapter):
         else:
             return False
 
-    def process(self, statement):
+    def process(self, statement):        
         response = collections.namedtuple('response', 'text confidence')
-        context = movies.context.movie()
-        writers = [writer['name'] for writer in movies.writer(context)]
-        response.text = "The writers of the movie are: \n" + format(writers)
-        response.confidence = 1
-
+        if movies.context.movie() is not None:
+            context = movies.context.movie()
+            writers = [writer['name'] for writer in movies.writer(context)]
+            response.text = "The writers of the movie are: \n" + format(writers)
+            response.confidence = 1
+        else:
+            threshold = 0.5
+            humanNames = nlp.get_human_names(statement.text)
+            (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
+            val = raw_input("Do you mean %s \n" %(person))
+            if any(x in val.lower() for x in nlp.positives()):
+                if similarity >= threshold:
+                    moviesW = movies.people_role[person]['writer']
+                    response.text = person + " has written: " + format(moviesW)
+                else:
+                    response.text = "The writers of the movie are: \n"
+            else:
+                response.text = ""
+            response.confidence = 1
         return response
 
 class GenreAdapter(LogicAdapter):

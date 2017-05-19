@@ -319,11 +319,11 @@ class writerAdapter(LogicAdapter):
 class GenreAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(GenreAdapter, self).__init__(**kwargs)
-        #Phrase 'wanna see some action tonight.'
-    def can_process(self, statement):
-        words = ['genre','category','action','comedy', 'documentary', 'family', 'adventure', 'biography', 'crime','drama','romance','fantasy', 'horror', 'war','musical',
+        self.genres = ['genre','category','action','comedy', 'documentary', 'family', 'adventure', 'biography', 'crime','drama','romance','fantasy', 'horror', 'war','musical',
         'sport', 'thriller', 'western','music','history','thriller']
 
+        #Phrase 'wanna see some action tonight.'
+    def can_process(self, statement):
         statement_text = nlp.cleanString(statement.text)
         # similarity = nlp.jaccard_sim(statement_text.lower().split(), words)
         # threshold = 0.5
@@ -331,51 +331,55 @@ class GenreAdapter(LogicAdapter):
         #     return 1
         # else:
         #     return 0
-        if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
+        if any(nlp.stem(x) in [nlp.stem(w) for w in self.genres] for x in statement_text.split()):
             return True
         else:
             return False
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
-        context = movies.context.movie()
-        genre = movies.genre(context)
-        resp = raw_input("the movie belong to this genres: %s. would you like to look for other genre options? \n"%genre)
+        response.text = 'sorry! we couldnt find any movie in this genre'
+        response.confidence = 0
+        genre = [genre for genre in self.genres if genre in nlp.cleanString(statement.text)]
+        resp = raw_input("Shall I propose some %s movies for you?\n"%genre[0])
 
         if any(x in resp.lower() for x in nlp.positives() + ['i do']):
-            resp = raw_input("what do you like to see tonight? \n")
-            films = movies.genreMovies(resp)
+            films = movies.genreMovies(genre[0])
             if len(films) != 0:
                 answer =  "Some movies in this genre are: \n"
-                for mov in films:
-                    answer += "Title: " + str(mov.title) + ",directed by: " + str(mov.director[0]) + "  Rated: " + str(mov.rating) + "\n"
-                print answer
-                fav_movie = raw_input("select what movie do you like to see !!! \n")
-                # Get the movie
-                try:
-                    movie = movies.getMovie(fav_movie)
-                except IndexError:
-                    fav_movie = raw_input("I don't know that one. Any others? \n")
-                    movie = movies.getMovie(fav_movie)
-                movies.context.upgradeMovie(movie[2])
-                val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director))
-                if any(x in resp.lower() for x in nlp.positives() + ['i do']):
-                    response.text = 'ejoy the movie !!!'
-                    response.confidence = 1
-                else:
-                    similar = movies.similarMovie(movie[2])
-                    if similar ==  None:
-                        response.text = 'Sorry, we couldn\'t find any similar movies.'
-                        response.confidence = 1
-                    else:
-                        response.text = "How about %s?" %(str(similar))
-                        response.confidence = 1
-                        movies.context.upgradeMovie(
-                            movies.imdbMovie(movies.getMovie(str(similar)))
-                        )
-            else:
-                response.text = 'sorry! we couldnt find any movie in this genre'
-                response.confidence = 0
+                for film,movie in films:
+                    answer += str(film.title) + ", directed by " + str(film.director[0]) + " or\n"
+                    movies.context.upgradeMovie(movie)
+
+                answer = answer[:-4]
+                response.text = answer
+                response.confidence = 1
+                # fav_movie = raw_input("select what movie do you like to see !!! \n")
+                # # Get the movie
+                # try:
+                #     movie = movies.getMovie(fav_movie)
+                # except IndexError:
+                #     fav_movie = raw_input("I don't know that one. Any others? \n")
+                #     movie = movies.getMovie(fav_movie)
+                # movies.context.upgradeMovie(movie[2])
+                # val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director))
+                # if any(x in resp.lower() for x in nlp.positives() + ['i do']):
+                #     response.text = 'ejoy the movie !!!'
+                #     response.confidence = 1
+                # else:
+                #     similar = movies.similarMovie(movie[2])
+                #     if similar ==  None:
+                #         response.text = 'Sorry, we couldn\'t find any similar movies.'
+                #         response.confidence = 1
+                #     else:
+                #         response.text = "How about %s?" %(str(similar))
+                #         response.confidence = 1
+                #         movies.context.upgradeMovie(
+                #             movies.imdbMovie(movies.getMovie(str(similar)))
+                #         )
+
+        else:
+            response.text = 'Anything else I can help you with?'
 
         return response
 

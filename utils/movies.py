@@ -19,7 +19,7 @@ top_250_list = []
 top_250_list_movies = []
 
 def setTop250_movies():
-    with open('./utils/data250.json') as data_file:    
+    with open('./utils/data250.json') as data_file:
         data = yaml.safe_load(data_file)
     for d in data:
         top_250_list.append(d['id'])
@@ -90,13 +90,14 @@ def genre(imdb_movie):
 
 def genreMovies(input_phrase):
     movies = []
-    print 'please wait. we are finding movies ...'
+    print 'Okay, let met think.'
+    top250 = ia.get_top250_movies()
     for movie in top250:
         ia.update(movie)
-        film = Movie(movie.movieID, movie['title'], movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
-        if input_phrase in map(lambda x:x.lower(), film.genres):
-            movies.append(film)
-            if len(movies) > 1:
+        if input_phrase in map(lambda x:x.lower(), movie['genres']):
+            film = Movie(movie.movieID, movie['title'], movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
+            movies.append((film,movie))
+            if len(movies) > 3:
                 break
 
     return movies
@@ -229,4 +230,3 @@ def imdbMovie(movie_tuple):
     assert(len(movie_tuple) == 3)
 
     return movie_tuple[2]
-

@@ -38,16 +38,6 @@ def extractMovieContext(context, statement):
 
     return movie
 
-def default_response():
-    """
-    Create a default response
-    """
-    response = collections.namedtuple('response', 'text confidence')
-    # Set default answer
-    response.text = "I don't know, ask me again later."
-    response.conf = 0
-    return response
-
 def format(data_list):
     """
     Convert list ([A, B, C]) in string of the form "A, B and C"
@@ -111,8 +101,9 @@ class actorAdapter(LogicAdapter):
 class faqAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(faqAdapter, self).__init__(**kwargs)
-
+        self.threshold= kwargs['threshold']
         # Multiplication factor for confidence. Lower the FAQ to prioritize other logicAdapters.
+        self.default_response = kwargs['default_response']
         self.dampening_factor = 0.7
 
     def can_process(self, statement):
@@ -137,7 +128,9 @@ class faqAdapter(LogicAdapter):
 
     def process(self, statement):
         context = extractMovieContext(movies.context, statement)
-        response = default_response()
+        response = collections.namedtuple('response', 'text confidence')
+        response.confidence = 0
+        response.text = self.default_response
         question = statement.text
 
         # If no FAQs were found, skip
@@ -156,7 +149,8 @@ class faqAdapter(LogicAdapter):
                     print "failed to parse answer"
                     continue
             response.confidence = (max_conf * self.dampening_factor)
-
+        if response.confidence < self.threshold:
+            response.text = self.default_response
         return response
 
 
@@ -205,17 +199,10 @@ class movieAdapter(LogicAdapter):
     def can_process(self, statement):
         words = ['movie','film','watch']
         statement_text = nlp.cleanString(statement.text)
-        # print statement_text
-        # similarity = nlp.levensteinWord(statement_text.lower().split(), words)
-        # threshold = 0.8
-        # if similarity >= threshold:
-        #     return 1
-        # else:
-        #     return 0
-        # if any(x in statement.text.split() for x in words):
-        #     return 1
-        # else:
-        #     return 0
+        #If user wants to know about a genre, don't give this adapter
+        genre = GenreAdapter()
+        if genre.can_process(statement):
+            return False
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
             return True
         else:

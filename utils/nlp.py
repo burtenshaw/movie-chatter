@@ -249,7 +249,7 @@ if 'grequests' in sys.modules:
         '''
         def handleResponse(tweet, pairs, response):
             replies = [i.get_text() for i in BeautifulSoup(response.content, 'html.parser').select('.tweet-text')]
-            
+
             if len(replies) >= 2:
                 pairs.append((tweet['text'], replies[1]))
 
@@ -291,7 +291,7 @@ else:
 
 
 def positives():
-    positives = ['yes','ok','sure','positive','affirmative']
+    positives = ['yes','ok','sure','positive','affirmative','correct']
     #Find synonyms
     synonyms = set(positives)
     for word in positives:

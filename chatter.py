@@ -45,6 +45,8 @@ chatbot = ChatBot("Terminal",
         },
         {
             'import_path': 'logic_adapters.faqAdapter',
+            'threshold': 0.4,
+            'default_response': 'I don\'t have an answer for that, sorry'
         },
         {
             'import_path': 'logic_adapters.actorAdapter',

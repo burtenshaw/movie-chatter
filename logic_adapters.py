@@ -213,11 +213,13 @@ class movieAdapter(LogicAdapter):
         response = collections.namedtuple('response', 'text confidence')
         fav_movie = raw_input("What's your favorite film? Maybe we can find something similar.\n")
         # Get the movie
-        try:
-            movie = movies.getMovie(fav_movie)
-        except IndexError:
-            fav_movie = raw_input("I don't know that one. Any others? \n")
-            movie = movies.getMovie(fav_movie)
+        while True:
+            try:
+                movie = movies.getMovie(fav_movie.rstrip(string.punctuation))   # Remove trailing punctuation for better search results
+                break
+            except IndexError:
+                fav_movie = raw_input("I don't know that one. Any others? \n")
+                # movie = movies.getMovie(fav_movie)
 
         movies.context.upgradeMovie(movie[2])
         val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director))
@@ -236,8 +238,8 @@ class movieAdapter(LogicAdapter):
                 )
 
         else:
-            response.text = ''
-            response.confidence = 0
+            response.text = 'Then I don\'t know which one you mean.'
+            response.confidence = 0.7
 
         return response
 

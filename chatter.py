@@ -1,5 +1,5 @@
 from chatterbot import ChatBot
-from chatterbot.trainers import ChatterBotCorpusTrainer
+from chatterbot.trainers import ChatterBotCorpusTrainer, ListTrainer
 
 import argparse
 
@@ -57,13 +57,33 @@ chatbot = ChatBot("Terminal",
         {
         	'import_path': 'logic_adapters.GenreAdapter',
         },
+        {
+            'import_path': 'chatterbot.logic.BestMatch',
+        },
     ],
     input_adapter="chatterbot.input.TerminalAdapter",
     output_adapter="chatterbot.output.TerminalAdapter",
     database=database,
-    trainer='chatterbot.trainers.ListTrainer'
 )
 
+chatbot.set_trainer(ChatterBotCorpusTrainer)
+# Train based on the english corpus.
+# Focus is on general conversation, movies and subjects
+# closely related to movies (history, literature, ...)
+chatbot.train("chatterbot.corpus.english.conversations")
+chatbot.train("chatterbot.corpus.english.emotion")
+chatbot.train("chatterbot.corpus.english.history")
+chatbot.train("chatterbot.corpus.english.literature")
+chatbot.train("chatterbot.corpus.english.trivia")
+chatbot.train("chatterbot.corpus.english.introductions")
+chatbot.train("chatterbot.corpus.english.movies")
+
+# Add arbitrary conversation data
+chatbot.set_trainer(ListTrainer)
+chatbot.train([
+    'How are you?',
+    'I\'m great, how are you?'
+])
 
 # Train the chat bot with a few responses
 # chatbot.train([])

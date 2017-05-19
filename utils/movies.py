@@ -57,13 +57,30 @@ def getMovie(input_phrase):
 
     ia.update(movie)
     title = str(movie)
-    director = ""
+    movie_keys = ['plot', 'rating', 'writier', 'genre', 'cast', 'year']
+    movie_data = [''] * (len(movie_keys) + 1)   # +1 to compensate for director who is not in 'movie_keys'.
     try :
-        director = str(movie['director'][0])
+        movie_data[0] = movie['director'][0]['name'].encode('ascii', errors='ignore')
     except KeyError:
         # Handle unknown director
-        director = "Unknown"
-    film = Movie(movie.movieID, title, movie['director'][0], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
+        pass
+    for i in range(len(movie_keys)):
+        try:
+            movie_data[i+1] = movie[movie_keys[i]]
+        except KeyError:
+            # Specific key not found
+            pass
+
+    film = Movie(movie.movieID, title,
+                 movie_data[0],     # Director
+                 movie_data[1],     # plot
+                 movie_data[2],     # rating
+                 movie_data[3],     # writer
+                 movie_data[4],     # genre
+                 movie_data[5],     # cast
+                 movie_data[6]      # year
+                 )
+    # film = Movie(movie.movieID, title, movie['director'][0], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
     response = (film,True, movie)
     return response
 

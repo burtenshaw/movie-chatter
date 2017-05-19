@@ -73,13 +73,13 @@ chatbot.set_trainer(ChatterBotCorpusTrainer)
 # Train based on the english corpus.
 # Focus is on general conversation, movies and subjects
 # closely related to movies (history, literature, ...)
-# chatbot.train("chatterbot.corpus.english.conversations")
-# chatbot.train("chatterbot.corpus.english.emotion")
-# chatbot.train("chatterbot.corpus.english.history")
-# chatbot.train("chatterbot.corpus.english.literature")
-# chatbot.train("chatterbot.corpus.english.trivia")
-# chatbot.train("chatterbot.corpus.english.introductions")
-# chatbot.train("chatterbot.corpus.english.movies")
+chatbot.train("chatterbot.corpus.english.conversations")
+chatbot.train("chatterbot.corpus.english.emotion")
+chatbot.train("chatterbot.corpus.english.history")
+chatbot.train("chatterbot.corpus.english.literature")
+chatbot.train("chatterbot.corpus.english.trivia")
+chatbot.train("chatterbot.corpus.english.greetings")
+chatbot.train("chatterbot.corpus.english.movies")
 
 # Add arbitrary conversation data
 chatbot.set_trainer(ListTrainer)

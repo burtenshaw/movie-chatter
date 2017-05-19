@@ -4,6 +4,7 @@ from chatterbot.trainers import ChatterBotCorpusTrainer, ListTrainer
 import argparse
 
 import logic_adapters
+import utils.nlp as nlp
 
 from utils import movies
 # Uncomment the following line to enable verbose logging
@@ -59,6 +60,8 @@ chatbot = ChatBot("Terminal",
         },
         {
             'import_path': 'chatterbot.logic.BestMatch',
+            "statement_comparison_function": nlp.statement_comparison_for_best_match,
+            "response_selection_method": "chatterbot.response_selection.get_random_response"
         },
     ],
     input_adapter="chatterbot.input.TerminalAdapter",
@@ -70,13 +73,13 @@ chatbot.set_trainer(ChatterBotCorpusTrainer)
 # Train based on the english corpus.
 # Focus is on general conversation, movies and subjects
 # closely related to movies (history, literature, ...)
-chatbot.train("chatterbot.corpus.english.conversations")
-chatbot.train("chatterbot.corpus.english.emotion")
-chatbot.train("chatterbot.corpus.english.history")
-chatbot.train("chatterbot.corpus.english.literature")
-chatbot.train("chatterbot.corpus.english.trivia")
-chatbot.train("chatterbot.corpus.english.introductions")
-chatbot.train("chatterbot.corpus.english.movies")
+# chatbot.train("chatterbot.corpus.english.conversations")
+# chatbot.train("chatterbot.corpus.english.emotion")
+# chatbot.train("chatterbot.corpus.english.history")
+# chatbot.train("chatterbot.corpus.english.literature")
+# chatbot.train("chatterbot.corpus.english.trivia")
+# chatbot.train("chatterbot.corpus.english.introductions")
+# chatbot.train("chatterbot.corpus.english.movies")
 
 # Add arbitrary conversation data
 chatbot.set_trainer(ListTrainer)

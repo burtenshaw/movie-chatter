@@ -48,7 +48,7 @@ chatbot = ChatBot("Terminal",
     input_adapter="chatterbot.input.TerminalAdapter",
     output_adapter="chatterbot.output.TerminalAdapter",
     database=database,
-    trainer="utils.trainers.TwitterTrainer"
+    trainer="trainers.TwitterTrainer.TwitterTrainer"
 )
 
 if test:

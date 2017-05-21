@@ -21,12 +21,14 @@ class TwitterTrainer(Trainer):
     def __init__(self, storage, **kwargs):
         super(TwitterTrainer, self).__init__(storage, **kwargs)
 
-    def train(self, keywords, num_tweets):
+    def train(self, keywords, num_tweets, extra_data={}):
         """
         Train the bot on Twitter search results for a number of keywords.
         For each keyword, num_tweets tweets will be fetched.
         (Although tweetCrawl might return less than num_tweets tweets--if
         any of the search results contain a tweet with no replies.)
+        extra_data dictionary gets added to each tweet, which can contain
+        information about the logic adapter this training session is meant for.
         """
 
         logger = logging.getLogger("trainers.TwitterTrainer")
@@ -42,5 +44,8 @@ class TwitterTrainer(Trainer):
                 statement = self.get_or_create(reply_processed)
 
                 statement.add_response(Response(tweet_processed))
+
+                statement.extra_data.update(extra_data)
+                statement.extra_data["keyword"] = keyword
 
                 self.storage.update(statement)

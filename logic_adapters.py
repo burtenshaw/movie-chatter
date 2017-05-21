@@ -371,7 +371,7 @@ class writerAdapter(LogicAdapter):
 class GenreAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(GenreAdapter, self).__init__(**kwargs)
-        self.genres = ['genre','category','action','comedy', 'documentary', 'family', 'adventure', 'biography', 'crime','drama','romance','fantasy', 'horror', 'war','musical',
+        self.genres = ['action','comedy', 'documentary', 'family', 'adventure', 'biography', 'crime','drama','romance','fantasy', 'horror', 'war','musical',
         'sport', 'thriller', 'western','music','history','thriller']
 
         #Phrase 'wanna see some action tonight.'
@@ -400,7 +400,7 @@ class GenreAdapter(LogicAdapter):
             if len(films) != 0:
                 answer =  "Some movies in this genre are: \n"
                 for film,movie in films:
-                    answer += str(film.title) + ", directed by " + str(film.director[0]) + " or\n"
+                    answer += '%s , directed by %s \n'% (film.title, film.director)
                     movies.context.upgradeMovie(movie)
 
                 answer = answer[:-4]

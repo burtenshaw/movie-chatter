@@ -25,6 +25,9 @@ def setTop250_movies():
     for d in data:
         top_250_list.append(d['id'])
         top_250_list_movies.append(Movie(d['id'], d['title'], d['director'], d['plot'], d['rating'], d['writer'], d['genres'], d['cast'], d['year']))
+        # To sort the list in place...
+        top_250_list_movies.sort(key=lambda x: x.rating, reverse=True)
+       
 
 setTop250_movies()
 
@@ -113,13 +116,12 @@ def genre(imdb_movie):
 def genreMovies(input_phrase):
     movies = []
     print 'Okay, let met think.'
-    top250 = ia.get_top250_movies()
-    for movie in top250:
-        ia.update(movie)
-        if input_phrase in map(lambda x:x.lower(), movie['genres']):
-            film = Movie(movie.movieID, movie['title'], movie['director'], movie['plot'], movie['rating'], movie['writer'], movie['genre'], movie['cast'], movie['year'])
-            movies.append((film,movie))
-            if len(movies) > 3:
+
+    for movie in top_250_list_movies:
+        if input_phrase in map(lambda x:x.lower(), movie.genres):
+            film = ia.get_movie(movie.id)
+            movies.append((movie,film))
+            if len(movies) > 5:
                 break
 
     return movies

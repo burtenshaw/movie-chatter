@@ -6,7 +6,7 @@ class MovieChatBot(ChatBot):
     A more featureful ChatBot class.
 
     Currently it has two additional attributes:
-        - input_history: A list containing all user inputs (strings). 
+        - input_history: A list containing all user inputs (Statements). 
           Ordered from old to new.
         - output_history: A list containing all chatbot outputs (Statements).
           Ordered from old to new.
@@ -20,10 +20,11 @@ class MovieChatBot(ChatBot):
         self.input_history = []
         self.output_history = []
 
-    def get_response(self, input_item, session_id=None):
-        output = ChatBot.get_response(self, input_item, session_id)
-        self.input_history.append(input_item)
-        self.output_history.append(output)
-        return output
+    def generate_response(self, input_statement, session_id):
+        input_statement, response = \
+                ChatBot.generate_response(self, input_statement, session_id)
+        self.input_history.append(input_statement)
+        self.output_history.append(response)
+        return input_statement, response
 
 

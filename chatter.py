@@ -1,4 +1,3 @@
-from chatterbot import ChatBot
 from chatterbot.trainers import ChatterBotCorpusTrainer, ListTrainer
 from trainers.FaqTrainer import FaqTrainer
 
@@ -8,6 +7,7 @@ import logic_adapters
 import utils.nlp as nlp
 
 from utils import movies
+from utils.chatbot import MovieChatBot
 # Uncomment the following line to enable verbose logging
 # logging.basicConfig(level=logging.INFO)
 
@@ -32,7 +32,7 @@ else:
 
 # Create a new instance of a ChatBot
 
-chatbot = ChatBot("Terminal",
+chatbot = MovieChatBot("Terminal",
     storage_adapter=storage_adapter,
     database_uri=database_uri,
     logic_adapters=[

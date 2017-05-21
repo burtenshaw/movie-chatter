@@ -1,3 +1,47 @@
+"""
+Contains a more featureful ChatBot class that keeps conversation history.
+See the MovieChatBot class for details.
+
+Conversation history can be useful when you need more complex interactions,
+with more than a single input and response. Following example defines an 
+adapter that gives different replies depending on the history:
+
+    # Defining an adapter somewhere
+    from chatterbot.logic import LogicAdapter
+    from chatterbot.conversation import Statement
+    from chatterbot.comparisons import levenshtein_distance
+
+    class AstleyAdapter(LogicAdapter):
+
+        def __init__(self, **kwargs):
+            super(AstleyAdapter, self).__init__(**kwargs)
+
+        def process(self, statement):
+            hist = self.chatbot.output_history
+            conf = levenshtein_distance(Statement("never gonna"), statement)
+            if hist == [] or hist[-1].text != "give you up!":
+                res = Statement(text="give you up!")
+            else:
+                res = Statement(text="let you down!")
+            res.confidence = conf
+            return res
+
+    # Building the chatbot
+    from utils.chatbot import MovieChatBot
+
+    chatbot = MovieChatBot(
+        "AstleyBot", 
+        input_adapter = "chatterbot.input.TerminalAdapter",
+        output_adapter = "chatterbot.output.TerminalAdapter",
+        logic_adapters = ["chatterbot.logic.BestMatch",
+                          "logic_adapters.AstleyAdapter"]
+        # ...
+    )
+
+More complex historical information could be kept by using the Statement's 
+add_extra_data() method.
+"""
+
 from chatterbot import ChatBot
 
 

@@ -267,13 +267,17 @@ class aboutAdapter(LogicAdapter):
                 response.confidence = cr.lowConfidence(1)
         elif stage == 1:
             val = statement.text.lower()
-            if nlp.isPositive(val):
-                response.text  = "Something you might not know is ...\n"
-                response.text += movies.trivia(self.movie)
-                response.confidence = cr.mediumConfidence(1)
+            if (movies.context.movie() is not None):
+                if nlp.isPositive(val):
+                    response.text  = "Something you might not know is ...\n"
+                    response.text += movies.trivia(self.movie)
+                    response.confidence = cr.mediumConfidence(1)
+                else:
+                    response.text = movies.plot(self.movie)
+                    response.confidence = cr.highConfidence(1)
             else:
-                response.text = movies.plot(self.movie)
-                response.confidence = cr.highConfidence(1)
+                response.text = 'Please be more precise what are you looking for !!!'
+                response.confidence = cr.lowConfidence(1)
 
         return response
 

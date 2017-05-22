@@ -416,10 +416,9 @@ class GenreAdapter(LogicAdapter):
         response = collections.namedtuple('response', 'text confidence')
         response.text = 'sorry! we couldnt find any movie in this genre'
         response.confidence = cr.noConfidence(1)
-        threshold =0.8 
+
         statement_text = nlp.cleanString(statement.text)
         genre = nlp.jaro_distance(statement_text, self.genres)
-        print genre
         #genre = [genre for genre in self.genres if genre in nlp.cleanString(statement.text)]
         films = movies.genreMovies(genre[0])
 

@@ -15,6 +15,10 @@
 python chatter.py --mongodb <address>:<port>
 ```
 
+# Load tweets of top 250 (optional)
+```bash
+mongoimport --db chatterbot-database --collection statements --file chatterbot-database.json
+```
 Some example conversations:
 
 ```

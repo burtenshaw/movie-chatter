@@ -266,8 +266,6 @@ class movieAdapter(LogicAdapter):
         super(movieAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        if movies.context.movie() is None:
-            return True
         words = ['movie', 'film','watch']
         statement_text = nlp.cleanString(statement.text)
         #If user wants to know about a genre, don't give this adapter

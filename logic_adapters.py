@@ -15,7 +15,7 @@ conversation_history = []
 def findStatementInStorage(logicAdapter, statement):
     """
     Is the statement stored in the logicAdapters storage?
-    
+
     Checks the stored statement to be of the same type as logicAdapter.
     """
     for stored_statement in logicAdapter.chatbot.storage.filter():
@@ -250,7 +250,7 @@ class aboutAdapter(LogicAdapter):
                 response.confidence = cr.mediumConfidence(1)
             else:
                 response.text = movies.plot(self.movie)
-                response.confidence = cr.lowConfidence(0.7)
+                response.confidence = cr.highConfidence(1)
 
         return response
 
@@ -365,7 +365,7 @@ class writerAdapter(LogicAdapter):
         else:
             return False
 
-    def process(self, statement):        
+    def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
         threshold = 0.6
         humanNames = nlp.get_human_names(statement.text)

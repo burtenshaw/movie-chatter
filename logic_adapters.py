@@ -411,19 +411,17 @@ class GenreAdapter(LogicAdapter):
         response.text = 'sorry! we couldnt find any movie in this genre'
         response.confidence = cr.noConfidence(1)
         genre = [genre for genre in self.genres if genre in nlp.cleanString(statement.text)]
-        resp = raw_input("Shall I propose some %s movies for you?\n"%genre[0])
+        films = movies.genreMovies(genre[0])
 
-        if any(x in resp.lower() for x in nlp.positives() + ['i do']):
-            films = movies.genreMovies(genre[0])
-            if len(films) != 0:
-                answer =  "Some movies in this genre are: \n"
-                for film,movie in films:
-                    answer += '%s , directed by %s \n'% (film.title, film.director)
-                    movies.context.upgradeMovie(movie)
+        if len(films) != 0:
+            answer =  "Some movies in this genre are: \n"
+            for film,movie in films:
+                answer += '%s , directed by %s \n'% (film.title, film.director)
+                movies.context.upgradeMovie(movie)
 
-                answer = answer[:-4]
-                response.text = answer
-                response.confidence = cr.lowConfidence(1)
+            answer = answer[:-4]
+            response.text = answer
+            response.confidence = cr.mediumConfidence(1)
                 # fav_movie = raw_input("select what movie do you like to see !!! \n")
                 # # Get the movie
                 # try:

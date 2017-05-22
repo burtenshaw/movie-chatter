@@ -173,7 +173,7 @@ def trivia(imdb_movie):
     # Take a random piece of trivia about a movie.
     ia.update(imdb_movie, 'trivia')
     trivia = ia.get_movie_trivia(imdb_movie.movieID)['data']['trivia']
-    rand = random.randint(0, len(trivia))
+    rand = random.randint(0, len(trivia) - 1)
     return trivia[rand]
 
 def plot(imdb_movie):

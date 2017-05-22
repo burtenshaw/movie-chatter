@@ -1,5 +1,5 @@
 from chatterbot.trainers import ChatterBotCorpusTrainer, ListTrainer
-from trainers.FaqTrainer import FaqTrainer
+from trainers.AdapterTrainer import AdapterTrainer
 
 import argparse
 
@@ -81,7 +81,7 @@ chatbot.train("chatterbot.corpus.english.greetings")
 chatbot.train("chatterbot.corpus.english.movies")
 
 # Example training data far FaqAdapter
-chatbot.set_trainer(FaqTrainer)
+chatbot.set_trainer(AdapterTrainer, adapter_class=logic_adapters.faqAdapter)
 chatbot.train([
     'Is this an FAQ?',
     'Hell, yes!'

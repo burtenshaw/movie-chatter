@@ -20,7 +20,7 @@ def findStatementInStorage(logicAdapter, statement):
     """
     for stored_statement in logicAdapter.chatbot.storage.filter():
         try:
-            if stored_statement.extra_data['logic'] == logicAdapter.type():
+            if stored_statement.extra_data['logic'] == logicAdapter.__class__.__name__:
                 if stored_statement.text == statement.text:
                     return True
 
@@ -138,22 +138,12 @@ class faqAdapter(LogicAdapter):
         # Multiplication factor for confidence. Lower the FAQ to prioritize other logicAdapters.
         self.default_response = kwargs['default_response']
 
-    @staticmethod
-    def type():
-        """
-        Used by to generate the Statements 'logic type' when training custom phrases.
-        """
-        return 'faq'
-
     def can_process(self, statement):
         """
         Checks if faqAdapter can process the statement.
 
         return True if the statement is found to be similar to a FAQ.
         """
-        # Can't handle empty context
-        if movies.context.movie() is None:
-            return False
 
         # If statement is in storage, we can handle it!
         if findStatementInStorage(self, statement):
@@ -161,6 +151,10 @@ class faqAdapter(LogicAdapter):
 
         # Can handle any question.
         return nlp.isQuestion(statement.text)
+
+        # Can't handle empty context
+        if movies.context.movie() is None:
+            return False
 
 
     def similar(self, m1, m2):
@@ -179,14 +173,15 @@ class faqAdapter(LogicAdapter):
             in_response_to__contains=statement.text
         )
 
+        response = Statement("")
+
         # If statement was found in storage
         if response_list:
             response = self.select_response(statement, response_list)
             response.confidence = cr.highConfidence(1)
 
         # If statement not in storage, handle it manually
-        else:
-            response = collections.namedtuple('response', 'text confidence')
+        elif movies.context.movie() is not None:
             response.confidence = cr.lowConfidence(0)
             response.text = self.default_response
 
@@ -207,9 +202,9 @@ class faqAdapter(LogicAdapter):
                         continue
                 response.confidence = cr.lowConfidence(max_conf)
 
-            if response.confidence < self.threshold:
-                response.text = self.default_response
-                response.confidence = cr.noConfidence(0)
+        if response.confidence < self.threshold:
+            response.text = self.default_response
+            response.confidence = cr.noConfidence(0)
 
         return response
 
@@ -327,6 +322,10 @@ class movieAdapter(LogicAdapter):
 class ratingAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(ratingAdapter, self).__init__(**kwargs)
+
+    @staticmethod
+    def type():
+        return "rating"
 
     def can_process(self, statement):
         if movies.context.movie() is None:

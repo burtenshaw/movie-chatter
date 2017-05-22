@@ -3,7 +3,12 @@ from chatterbot.conversation import Response, Statement
 
 from logic_adapters import faqAdapter
 
-class FaqTrainer(ListTrainer):
+class AdapterTrainer(ListTrainer):
+
+    def __init__(self, *args, **kwargs):
+        super(AdapterTrainer, self).__init__(*args, **kwargs)
+        self.adapter_class = kwargs['adapter_class']
+
     def get_or_create(self, statement_text):
         statement = self.storage.find(statement_text)
 
@@ -11,5 +16,5 @@ class FaqTrainer(ListTrainer):
             statement = Statement(statement_text)
 
         # Store the logic type in the 'extra_data'
-        statement.add_extra_data('logic', faqAdapter.type())
+        statement.add_extra_data('logic', self.adapter_class.__name__)
         return statement

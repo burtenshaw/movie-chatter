@@ -95,27 +95,45 @@ class actorAdapter(LogicAdapter):
         threshold = 0.6
         humanNames = nlp.get_human_names(statement.text)
         (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
+        personWritten = False
         if similarity >= threshold:
             val = raw_input("Do you mean %s \n" %(person))
             if nlp.isPositive(val):
-                if 'cast'  in movies.people_role[person]:
-                    moviesW = movies.people_role[person]['cast']
-                    response.text = person + " has acted in: " + format(moviesW)
+                personWritten = True
+            else:
+                personWritten = False
+        theMovies = movies.getMovies250All()
+        moviePresent = nlp.getBestMatchWithThreshod(statement.text,theMovies,0.8)
+        if personWritten and moviePresent==None:
+            if 'cast'  in movies.people_role[person]:
+                moviesW = movies.people_role[person]['cast']
+                response.text = person + " has acted: " + format(moviesW)
+                response.confidence = cr.highConfidence(1)
+            else:
+                response.text = person + " is not registered as an actor in our Database, keep trying, we won't give up!!"
+                response.confidence = cr.mediumConfidence(1)
+        elif personWritten and moviePresent!=None:
+            if 'cast'  in movies.people_role[person]:
+                moviesW = movies.people_role[person]['cast']
+                if moviePresent in movies.people_role[person]['cast']:
+                    response.text = "Hurray! " + person + " did act in " + moviePresent + "!! your beating my database!!"
                     response.confidence = cr.highConfidence(1)
                 else:
-                    response.text = person + " is not registered as an actor in our Database, keep trying, we won't give up!!"
+                    response.text = person + " did not act in " + moviePresent + " but: " + format(moviesW)
                     response.confidence = cr.mediumConfidence(1)
-            else:
-                response.text = ""
-                response.confidence = cr.lowConfidence(1)
+        elif not personWritten and moviePresent!=None:
+            movieObj = movies.getMovie250(moviePresent)
+            response.text = "the actors of the " + moviePresent + " are: " + format(movieObj.cast)
+            response.confidence = cr.mediumConfidence(1)
         else:
             response.text = ""
             response.confidence = cr.lowConfidence(1)
         if response.text == "":
             if movies.context.movie() is not None:
-                context_movie = extractMovieContext(movies.context, statement)
-                response = self.enumerate(context_movie)
-                response.confidence = cr.highConfidence(1)
+                if movies.context.movie() is not None:
+                    context_movie = extractMovieContext(movies.context, statement)
+                    response = self.enumerate(context_movie)
+                    response.confidence = cr.highConfidence(1)
         return response
 
     def enumerate(self, imdb_movie):

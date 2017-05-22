@@ -252,7 +252,7 @@ class aboutAdapter(LogicAdapter):
 
         if stage == 0:
             theMovies = movies.getMovies250All()
-            ans = nlp.getBestMatchWithThreshod(statement.text, theMovies, 0.7)
+            ans = nlp.getBestMatchWithThreshod(statement.text, theMovies, 0.8)
             if ans is not None:
                 movie = movies.getMovie(ans)
                 if movie is not None:

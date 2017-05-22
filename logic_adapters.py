@@ -81,9 +81,9 @@ class actorAdapter(LogicAdapter):
         super(actorAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        if movies.context.movie() is None:
-            return False
-        words = ['actor','performer','star']
+        # if movies.context.movie() is None:
+        #     return False
+        words = ['actor','performer','star', 'appear', 'act', 'perform']
         statement_text = nlp.cleanString(statement.text)
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
             return True
@@ -92,9 +92,27 @@ class actorAdapter(LogicAdapter):
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
-        context_movie = extractMovieContext(movies.context, statement)
-
-        response = self.enumerate(context_movie)
+        threshold = 0.6
+        humanNames = nlp.get_human_names(statement.text)
+        (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
+        if similarity >= threshold:
+            val = raw_input("Do you mean %s \n" %(person))
+            if any(x in val.lower() for x in nlp.positives()):
+                if 'cast'  in movies.people_role[person]:
+                    moviesW = movies.people_role[person]['cast']
+                    response.text = person + " has acted in: " + format(moviesW)
+                else:
+                    response.text = person + " is not registered as an actor in our Database, keep trying, we won't give up!!"
+            else:
+                response.text = ""
+            response.confidence = cr.lowConfidence(1)
+        else:
+            response.text = ""
+            response.confidence = cr.lowConfidence(1)
+        if response.text == "":
+            if movies.context.movie() is not None:
+                context_movie = extractMovieContext(movies.context, statement)
+                response = self.enumerate(context_movie)
 
         return response
 
@@ -257,6 +275,13 @@ class movieAdapter(LogicAdapter):
         genre = GenreAdapter()
         if genre.can_process(statement):
             return False
+        writer = writerAdapter()
+        if writer.can_process(statement):
+            return False
+        actor = actorAdapter()
+        if actor.can_process(statement):
+            return False
+
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
             return True
         else:
@@ -333,7 +358,7 @@ class writerAdapter(LogicAdapter):
         super(writerAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        words = ['writer', 'wrote','written']
+        words = ['writer', 'wrote','written','create','compose','author','scribble','rewrite']
         statement_text = nlp.cleanString(statement.text)
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
             return True
@@ -342,25 +367,29 @@ class writerAdapter(LogicAdapter):
 
     def process(self, statement):        
         response = collections.namedtuple('response', 'text confidence')
-        if movies.context.movie() is not None:
-            context = extractMovieContext(movies.context, statement)
-            writers = [writer['name'] for writer in movies.writer(context)]
-            response.text = "The writers of the movie are: \n" + format(writers)
-            response.confidence = cr.lowConfidence(1)
-        else:
-            threshold = 0.5
-            humanNames = nlp.get_human_names(statement.text)
-            (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
+        threshold = 0.6
+        humanNames = nlp.get_human_names(statement.text)
+        (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
+        if similarity >= threshold:
             val = raw_input("Do you mean %s \n" %(person))
             if any(x in val.lower() for x in nlp.positives()):
-                if similarity >= threshold:
+                if 'writer'  in movies.people_role[person]:
                     moviesW = movies.people_role[person]['writer']
                     response.text = person + " has written: " + format(moviesW)
                 else:
-                    response.text = "The writers of the movie are: \n"
+                    response.text = person + " is not registered as a writer in our Database, keep trying, we won't give up!!"
             else:
                 response.text = ""
             response.confidence = cr.lowConfidence(1)
+        else:
+            response.text = ""
+            response.confidence = cr.lowConfidence(1)
+        if response.text == "":
+            if movies.context.movie() is not None:
+                context = extractMovieContext(movies.context, statement)
+                writers = [writer['name'] for writer in movies.writer(context)]
+                response.text = "The writers of the movie are: \n" + format(writers)
+                response.confidence = cr.lowConfidence(1)
         return response
 
 

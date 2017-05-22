@@ -6,7 +6,7 @@ import argparse
 import logic_adapters
 import utils.nlp as nlp
 
-from utils import movies
+from utils import movies, confidenceRange as cr
 from utils.chatbot import MovieChatBot
 # Uncomment the following lines to enable verbose logging
 # import logging
@@ -62,7 +62,8 @@ chatbot = MovieChatBot("Terminal",
         },
         {
             'import_path': 'chatterbot.logic.BestMatch',
-            "statement_comparison_function": nlp.statement_comparison_for_best_match,
+            "statement_comparison_function":
+                lambda x, y: cr.lowConfidence(nlp.statement_comparison_for_best_match(x, y)),
             "response_selection_method": "chatterbot.response_selection.get_random_response"
         },
     ],

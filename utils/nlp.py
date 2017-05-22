@@ -249,8 +249,7 @@ def statement_comparison_for_best_match(statement_1, statement_2):
 
         return cleanString(text).split()
 
-    # confidence between 0.65 and 0.75
-    return 0.65 + 0.1 * jaccard_sim(process(statement_1), process(statement_2))
+    return jaccard_sim(process(statement_1), process(statement_2))
 
 
 # Twitter crawler for Training.

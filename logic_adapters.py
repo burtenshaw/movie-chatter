@@ -234,8 +234,6 @@ class aboutAdapter(LogicAdapter):
         self.movie = None
 
     def can_process(self, statement):
-        if movies.context.movie() is None:
-            return False
 
         if self.conversation_stage() > 0:
             return True
@@ -253,10 +251,20 @@ class aboutAdapter(LogicAdapter):
         stage = self.conversation_stage(response)
 
         if stage == 0:
-            self.movie = extractMovieContext(movies.context, statement)
-            movies.context.upgradeMovie(self.movie)
-            response.text = "Do you know %s?" %(str(self.movie))
-            response.confidence = cr.lowConfidence(1)
+            theMovies = movies.getMovies250All()
+            ans = nlp.getBestMatchWithThreshod(statement.text, theMovies, 0.8)
+            if ans is not None:
+                movie = movies.getMovie(ans)
+                if movie is not None:
+                    movies.context.upgradeMovie(movies.imdbMovie(movie))
+            else:
+                response.text = 'Please be more precise what are you looking for !!!'
+                response.confidence = cr.lowConfidence(1)
+            if (movies.context.movie() is not None):
+                self.movie = extractMovieContext(movies.context, statement)
+                movies.context.upgradeMovie(self.movie)
+                response.text = "Do you know %s?" %(str(self.movie))
+                response.confidence = cr.lowConfidence(1)
         elif stage == 1:
             val = statement.text.lower()
             if nlp.isPositive(val):
@@ -298,6 +306,9 @@ class movieAdapter(LogicAdapter):
             return False
         rating = ratingAdapter()
         if rating.can_process(statement):
+            return False
+        about = aboutAdapter()
+        if about.can_process(statement):
             return False
 
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):

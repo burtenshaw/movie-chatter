@@ -29,6 +29,7 @@ Lemmatizer = nltk.WordNetLemmatizer()
 
 import corpus
 
+#compute the distance of two words. meausuring the common characters, score is normalized 0, 1
 def jaro_distance(sentence, word):
     threshold = 0.85
     answer = []

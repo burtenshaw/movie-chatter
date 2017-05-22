@@ -101,11 +101,13 @@ class actorAdapter(LogicAdapter):
                 if 'cast'  in movies.people_role[person]:
                     moviesW = movies.people_role[person]['cast']
                     response.text = person + " has acted in: " + format(moviesW)
+                    response.confidence = cr.highConfidence(1)
                 else:
                     response.text = person + " is not registered as an actor in our Database, keep trying, we won't give up!!"
+                    response.confidence = cr.mediumConfidence(1)
             else:
                 response.text = ""
-            response.confidence = cr.lowConfidence(1)
+                response.confidence = cr.lowConfidence(1)
         else:
             response.text = ""
             response.confidence = cr.lowConfidence(1)
@@ -113,7 +115,7 @@ class actorAdapter(LogicAdapter):
             if movies.context.movie() is not None:
                 context_movie = extractMovieContext(movies.context, statement)
                 response = self.enumerate(context_movie)
-
+                response.confidence = cr.highConfidence(1)
         return response
 
     def enumerate(self, imdb_movie):
@@ -376,11 +378,13 @@ class writerAdapter(LogicAdapter):
                 if 'writer'  in movies.people_role[person]:
                     moviesW = movies.people_role[person]['writer']
                     response.text = person + " has written: " + format(moviesW)
+                    response.confidence = cr.highConfidence(1)
                 else:
                     response.text = person + " is not registered as a writer in our Database, keep trying, we won't give up!!"
+                    response.confidence = cr.mediumConfidence(1)
             else:
                 response.text = ""
-            response.confidence = cr.lowConfidence(1)
+                response.confidence = cr.lowConfidence(1)
         else:
             response.text = ""
             response.confidence = cr.lowConfidence(1)
@@ -389,7 +393,7 @@ class writerAdapter(LogicAdapter):
                 context = extractMovieContext(movies.context, statement)
                 writers = [writer['name'] for writer in movies.writer(context)]
                 response.text = "The writers of the movie are: \n" + format(writers)
-                response.confidence = cr.lowConfidence(1)
+                response.confidence = cr.highConfidence(1)
         return response
 
 

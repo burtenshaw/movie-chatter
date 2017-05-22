@@ -362,8 +362,17 @@ def get_human_names(text):
             name = ''
         person = []
     return person_list
+
+
+def isPositive(text):
+    if "i do" in text.lower() and not any(negative in text for negative in ["don't", "dont", "not"]):
+        return True
+    if any(x in text.lower() for x in positives()):
+        return True
+    return False
     
 if __name__=='__main__':
     # Just for testing
     # print movie_comparison('I thought The Godfather was amazing!', 'I loved The Godfather a lot!')
     print positives()
+    print isPositive("no")

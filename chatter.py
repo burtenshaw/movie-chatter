@@ -38,10 +38,10 @@ chatbot = MovieChatBot("Terminal",
     database_uri=database_uri,
     logic_adapters=[
         {
-             'import_path': 'logic_adapters.movieAdapter',
+             'import_path': 'logic_adapters.aboutAdapter',
         },
         {
-             'import_path': 'logic_adapters.aboutAdapter',
+             'import_path': 'logic_adapters.movieAdapter',
         },
         {
              'import_path': 'logic_adapters.ratingAdapter',

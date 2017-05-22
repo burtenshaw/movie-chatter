@@ -3,7 +3,7 @@ def _scale(num, min, max):
     return (num * (max-min)) + min
 
 
-# high confidence: exact statement found in DB
+# high confidence: exact statement found in DB or certain of correctness of answer
 # medium confidence: similar statement found in DB
 # low confidence: custom response by logicAdapter
 # no confidence: catch-all response
@@ -13,21 +13,21 @@ def highConfidence(num):
     Convert num to a "high-confidence" range (i.e. [0.85-1.00]
     param: num any number between 0.00 and 1.00
     """
-    return _scale(float(num), 0.85, 1.00)
+    return _scale(float(num), 0.90, 1.00)
 
 def mediumConfidence(num):
     """
     Convert num to a "medium-confidence" range (i.e. [0.70-0.85]
     param: num any number between 0.00 and 1.00
     """
-    return _scale(float(num), 0.70, 0.85)
+    return _scale(float(num), 0.80, 0.90)
 
 def lowConfidence(num):
     """
     Convert num to a "medium-confidence" range (i.e. [0.50-0.70]
     param: num any number between 0.00 and 1.00
     """
-    return _scale(float(num), 0.50, 0.70)
+    return _scale(float(num), 0.70, 0.80)
 
 def noConfidence(num):
     """

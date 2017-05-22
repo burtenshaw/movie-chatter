@@ -97,7 +97,7 @@ class actorAdapter(LogicAdapter):
         (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
         if similarity >= threshold:
             val = raw_input("Do you mean %s \n" %(person))
-            if any(x in val.lower() for x in nlp.positives()):
+            if nlp.isPositive(val):
                 if 'cast'  in movies.people_role[person]:
                     moviesW = movies.people_role[person]['cast']
                     response.text = person + " has acted in: " + format(moviesW)
@@ -241,8 +241,7 @@ class aboutAdapter(LogicAdapter):
             response.confidence = cr.lowConfidence(1)
         elif stage == 1:
             val = statement.text.lower()
-            if any(x in val for x in nlp.positives()) \
-            and not any(x in val for x in ["don't", "dont", "not"]):
+            if nlp.isPositive(val):
                 response.text  = "Something you might not know is ...\n"
                 response.text += movies.trivia(self.movie)
                 response.confidence = cr.mediumConfidence(1)
@@ -267,6 +266,8 @@ class movieAdapter(LogicAdapter):
         super(movieAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
+        if movies.context.movie() is None:
+            return True
         words = ['movie', 'film','watch']
         statement_text = nlp.cleanString(statement.text)
         #If user wants to know about a genre, don't give this adapter
@@ -279,6 +280,9 @@ class movieAdapter(LogicAdapter):
         actor = actorAdapter()
         if actor.can_process(statement):
             return False
+        rating = ratingAdapter()
+        if rating.can_process(statement):
+            return False
 
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
             return True
@@ -289,34 +293,37 @@ class movieAdapter(LogicAdapter):
         movie = None
         response = collections.namedtuple('response', 'text confidence')
         fav_movie = raw_input("What's your favorite film? Maybe we can find something similar.\n")
-        # Get the movie
-        while True:
+
+        # Don't get stuck for ever finding the right movie.
+        count = 0
+        while count < 3:
             try:
                 movie = movies.getMovie(fav_movie.rstrip(string.punctuation))   # Remove trailing punctuation for better search results
-                break
             except IndexError:
                 fav_movie = raw_input("I don't know that one. Any others? \n")
-                # movie = movies.getMovie(fav_movie)
+                movie = movies.getMovie(fav_movie)
 
-        movies.context.upgradeMovie(movies.imdbMovie(movie))
-        val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director))
+            movies.context.upgradeMovie(movies.imdbMovie(movie))
 
-        if any(x in val.lower() for x in nlp.positives() + ['i do']):
-
-            similar = movies.similarMovie(movie[2])
-            if similar ==  None:
-                response.text = 'Sorry, we couldn\'t find any similar movies.'
-                response.confidence = cr.noConfidence(1)
+            val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director))
+            count += 1
+            if nlp.isPositive(val):
+                similar = movies.similarMovie(movie[2])
+                if similar ==  None:
+                    response.text = 'Sorry, we couldn\'t find any similar movies.'
+                    response.confidence = cr.highConfidence(1)
+                else:
+                    response.text = "How about %s?" %(str(similar))
+                    response.confidence = cr.highConfidence(1)
+                    movies.context.upgradeMovie(
+                        movies.imdbMovie(movies.getMovie(str(similar)))
+                    )
+                return response
             else:
-                response.text = "How about %s?" %(str(similar))
-                response.confidence = cr.lowConfidence(1)
-                movies.context.upgradeMovie(
-                    movies.imdbMovie(movies.getMovie(str(similar)))
-                )
+                fav_movie = raw_input("I'm sorry, please be more specific.\n")
 
-        else:
-            response.text = 'Then I don\'t know which one you mean.'
-            response.confidence = cr.noConfidence(0.7)
+
+        response.text = 'Then I don\'t know which one you mean.'
 
         return response
 
@@ -374,7 +381,7 @@ class writerAdapter(LogicAdapter):
         (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
         if similarity >= threshold:
             val = raw_input("Do you mean %s \n" %(person))
-            if any(x in val.lower() for x in nlp.positives()):
+            if nlp.isPositive(val):
                 if 'writer'  in movies.people_role[person]:
                     moviesW = movies.people_role[person]['writer']
                     response.text = person + " has written: " + format(moviesW)

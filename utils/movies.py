@@ -59,6 +59,17 @@ context = Context()
 # TODO : A list of phrases with movies in
 movies_dialogue_history = []
 
+def getMovies250All():
+    movies = []
+    for movie in top_250_list_movies:
+        movies.append(movie.title)
+    return movies
+
+def getMovie250(title):
+    for movie in top_250_list_movies:
+        if movie.title == title:
+            return movie
+    return
 
 def tophit(string):
     # Get the first movie on IMDB that responds to a given search.

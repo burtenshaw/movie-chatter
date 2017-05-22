@@ -218,6 +218,16 @@ def getBestMatch(statement,movies):
     scores = [(smith_waterman(statement,movie),movie) for movie in movies]
     return max(scores)[1]
 
+def getBestMatchWithThreshod(statement,movies,threshold):
+    '''
+    Get the movie title with the highest Smith-Waterman similarity compared to the statement
+    '''
+    scores = [(smith_waterman(statement,movie),movie) for movie in movies]
+    # print("score " + str(max(scores)[0]) + " title " + max(scores)[1])
+    if max(scores)[0] > threshold:
+        return max(scores)[1]
+    else:
+        return None
 
 def jaccard_sim(x,y):
     """

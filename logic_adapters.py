@@ -367,7 +367,7 @@ class writerAdapter(LogicAdapter):
         super(writerAdapter, self).__init__(**kwargs)
 
     def can_process(self, statement):
-        words = ['writer', 'wrote','written','create','compose','author','scribble','rewrite']
+        words = ['writer', 'writes', 'wrote','written','create','compose','author','scribble','rewrite']
         statement_text = nlp.cleanString(statement.text)
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
             return True
@@ -379,19 +379,36 @@ class writerAdapter(LogicAdapter):
         threshold = 0.6
         humanNames = nlp.get_human_names(statement.text)
         (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
+        personWritten = False
         if similarity >= threshold:
             val = raw_input("Do you mean %s \n" %(person))
             if nlp.isPositive(val):
-                if 'writer'  in movies.people_role[person]:
-                    moviesW = movies.people_role[person]['writer']
-                    response.text = person + " has written: " + format(moviesW)
+                personWritten = True
+            else:
+                personWritten = False
+        theMovies = movies.getMovies250All()
+        moviePresent = nlp.getBestMatchWithThreshod(statement.text,theMovies,0.8)
+        if personWritten and moviePresent==None:
+            if 'writer'  in movies.people_role[person]:
+                moviesW = movies.people_role[person]['writer']
+                response.text = person + " has written: " + format(moviesW)
+                response.confidence = cr.highConfidence(1)
+            else:
+                response.text = person + " is not registered as a writer in our Database, keep trying, we won't give up!!"
+                response.confidence = cr.mediumConfidence(1)
+        elif personWritten and moviePresent!=None:
+            if 'writer'  in movies.people_role[person]:
+                moviesW = movies.people_role[person]['writer']
+                if moviePresent in movies.people_role[person]['writer']:
+                    response.text = "Hurray! " + person + " did write " + moviePresent + "!! your beating my database!!"
                     response.confidence = cr.highConfidence(1)
                 else:
-                    response.text = person + " is not registered as a writer in our Database, keep trying, we won't give up!!"
+                    response.text = moviePresent + " was not written by " + person + " but: " + format(moviesW)
                     response.confidence = cr.mediumConfidence(1)
-            else:
-                response.text = ""
-                response.confidence = cr.lowConfidence(1)
+        elif not personWritten and moviePresent!=None:
+            movieObj = movies.getMovie250(moviePresent)
+            response.text = "the writers of the " + moviePresent + " are: " + format(movieObj.writer)
+            response.confidence = cr.mediumConfidence(1)
         else:
             response.text = ""
             response.confidence = cr.lowConfidence(1)

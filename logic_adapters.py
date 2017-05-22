@@ -4,6 +4,7 @@ import collections
 import string
 
 from chatterbot.logic import LogicAdapter
+from chatterbot.conversation import Statement
 
 from utils import movies, nlp, confidenceRange as cr
 
@@ -193,16 +194,20 @@ class faqAdapter(LogicAdapter):
         return response
 
 
-
 class aboutAdapter(LogicAdapter):
 
     def __init__(self, **kwargs):
         super(aboutAdapter, self).__init__(**kwargs)
+        self.movie = None
 
     def can_process(self, statement):
         if movies.context.movie() is None:
             return False
-        words = ['about','explain','information']
+
+        if self.conversation_stage() == 1:
+            return True
+
+        words = ['about', 'explain', 'information']
         statement_text = nlp.cleanString(statement.text)
 
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
@@ -211,20 +216,35 @@ class aboutAdapter(LogicAdapter):
             return False
 
     def process(self, statement):
-        response = collections.namedtuple('response', 'text confidence')
-        context = extractMovieContext(movies.context,statement)
-        movies.context.upgradeMovie(context)
-        val = raw_input("Do you know %s?\n" %(str(context)))
+        response = Statement("")
+        stage = self.conversation_stage(response)
 
-        if any(x in val.lower() for x in nlp.positives() + ['i do']):
-            print "Something you might not know is ..."
-            response.text = movies.trivia(context)
+        if stage == 0:
+            self.movie = extractMovieContext(movies.context, statement)
+            movies.context.upgradeMovie(self.movie)
+            response.text = "Do you know %s?" %(str(self.movie))
             response.confidence = cr.lowConfidence(1)
-        else:
-            response.text = movies.plot(context)
-            response.confidence = cr.lowConfidence(0.7)
+        elif stage == 1:
+            val = statement.text.lower()
+            if any(x in val for x in nlp.positives() + ['i do']):
+                response.text  = "Something you might not know is ...\n"
+                response.text += movies.trivia(self.movie)
+                response.confidence = cr.mediumConfidence(1)
+            else:
+                response.text = movies.plot(self.movie)
+                response.confidence = cr.lowConfidence(0.7)
 
         return response
+
+    def conversation_stage(self, response=Statement("")):
+        hist = self.chatbot.output_history
+        if hist == [] or type(hist[-1]) != Statement:
+            stage = 0
+        else:
+            stage = hist[-1].extra_data.get("about_stage", -1) + 1
+        response.add_extra_data("about_stage", stage)
+        return stage
+
 
 class movieAdapter(LogicAdapter):
     def __init__(self, **kwargs):

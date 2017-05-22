@@ -8,7 +8,8 @@ import utils.nlp as nlp
 
 from utils import movies
 from utils.chatbot import MovieChatBot
-# Uncomment the following line to enable verbose logging
+# Uncomment the following lines to enable verbose logging
+# import logging
 # logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser()

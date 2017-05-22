@@ -11,7 +11,6 @@ import requests
 from bs4 import BeautifulSoup
 import sys
 import logging
-
 try:
     import grequests
 except ImportError:
@@ -21,6 +20,7 @@ except ImportError:
 from nltk.metrics import *
 # Stopwords
 from nltk.corpus import stopwords
+from pyjarowinkler import distance
 # To use the stop words list:
 stops = set(stopwords.words("english"))
 
@@ -29,6 +29,16 @@ Lemmatizer = nltk.WordNetLemmatizer()
 
 import corpus
 
+def jaro_distance(sentence, word):
+    threshold = 0.85
+    answer = []
+    for w in sentence.split():
+        for i in word:
+            dist = distance.get_jaro_distance(w,i)
+            if ( dist > threshold):
+                answer.append(i)
+
+    return answer
 
 def sentence_tokenizer(string):
     # Break up a text into sentences
@@ -301,7 +311,6 @@ else:
 # search_term = "What movie should i watch?"
 # cnt =999
 # tweets = tweetCrawl(search_term, cnt)
-
 
 def positives():
     positives = ['yes','ok','sure','positive','affirmative','correct']

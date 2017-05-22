@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-
+from pyjarowinkler import distance
 import collections
 import string
 
@@ -401,9 +401,10 @@ class GenreAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(GenreAdapter, self).__init__(**kwargs)
         self.genres = ['action','comedy', 'documentary', 'family', 'adventure', 'biography', 'crime','drama','romance','fantasy', 'horror', 'war','musical',
-        'sport', 'thriller', 'western','music','history','thriller']
+        'sport', 'thriller', 'western','music','history']
 
         #Phrase 'wanna see some action tonight.'
+        #now accept phrases even using comedies or histories. using Jaro Winkler Distance
     def can_process(self, statement):
         statement_text = nlp.cleanString(statement.text)
         if any(nlp.stem(x) in [nlp.stem(w) for w in self.genres] for x in statement_text.split()):
@@ -415,7 +416,11 @@ class GenreAdapter(LogicAdapter):
         response = collections.namedtuple('response', 'text confidence')
         response.text = 'sorry! we couldnt find any movie in this genre'
         response.confidence = cr.noConfidence(1)
-        genre = [genre for genre in self.genres if genre in nlp.cleanString(statement.text)]
+        threshold =0.8 
+        statement_text = nlp.cleanString(statement.text)
+        genre = nlp.jaro_distance(statement_text, self.genres)
+        print genre
+        #genre = [genre for genre in self.genres if genre in nlp.cleanString(statement.text)]
         films = movies.genreMovies(genre[0])
 
         if len(films) != 0:

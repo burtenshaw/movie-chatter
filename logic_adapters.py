@@ -241,7 +241,8 @@ class aboutAdapter(LogicAdapter):
             response.confidence = cr.lowConfidence(1)
         elif stage == 1:
             val = statement.text.lower()
-            if any(x in val for x in nlp.positives() + ['i do']):
+            if any(x in val for x in nlp.positives()) \
+            and not any(x in val for x in ["don't", "dont", "not"]):
                 response.text  = "Something you might not know is ...\n"
                 response.text += movies.trivia(self.movie)
                 response.confidence = cr.mediumConfidence(1)

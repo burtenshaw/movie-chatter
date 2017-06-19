@@ -8,8 +8,6 @@ from chatterbot.conversation import Statement
 
 from utils import movies, nlp, confidenceRange as cr
 
-conversation_history = []
-
 
 
 def findStatementInStorage(logicAdapter, statement):
@@ -77,6 +75,7 @@ def format(data_list):
 
 
 class actorAdapter(LogicAdapter):
+
     def __init__(self, **kwargs):
         super(actorAdapter, self).__init__(**kwargs)
 
@@ -150,6 +149,7 @@ class actorAdapter(LogicAdapter):
 
 
 class faqAdapter(LogicAdapter):
+
     def __init__(self, **kwargs):
         super(faqAdapter, self).__init__(**kwargs)
         self.threshold= kwargs['threshold']
@@ -224,6 +224,22 @@ class faqAdapter(LogicAdapter):
             response.text = self.default_response
             response.confidence = cr.noConfidence(0)
 
+        return response
+
+
+class defaultResponseAdapter(LogicAdapter):
+
+    def __init__(self, **kwargs):
+        super(defaultResponseAdapter, self).__init__(**kwargs)
+        self.message = kwargs.get('message', 'What do you mean?')
+        self.threshold = kwargs.get('threshold', 0.25)
+
+    def can_process(self, statement):
+        return True
+
+    def process(self, statement):
+        response = Statement(self.message)
+        response.confidence = self.threshold
         return response
 
 

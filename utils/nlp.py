@@ -1,16 +1,20 @@
 from __future__ import division
+
 import nltk
 import string
+import numpy as np
+import requests
+import sys
+import logging
+
 from collections import defaultdict
 from nltk import word_tokenize
 from nltk.tag import pos_tag
 from nltk.corpus import wordnet as wn
-import numpy as np
 from pattern.web import Twitter, hashtags
-import requests
 from bs4 import BeautifulSoup
-import sys
-import logging
+from chatterbot.conversation import Statement
+from chatterbot.comparisons import levenshtein_distance
 try:
     import grequests
 except ImportError:
@@ -262,6 +266,7 @@ def movie_comparison(statement, other_statement, data='data/keywords_dictionary.
 
 
 def statement_comparison_for_best_match(statement_1, statement_2):
+    """Compares two statements by removing punctuation and calculating levenshtein distance."""
     def process(statement):
         text = statement.text
 
@@ -271,6 +276,7 @@ def statement_comparison_for_best_match(statement_1, statement_2):
         return cleanString(text).split()
 
     return jaccard_sim(process(statement_1), process(statement_2))
+    #return levenshtein_distance(statement_1, statement_2)
 
 
 # Twitter crawler for Training.

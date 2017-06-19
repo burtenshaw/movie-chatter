@@ -1,16 +1,15 @@
-from chatterbot.trainers import ChatterBotCorpusTrainer, ListTrainer
-from trainers.AdapterTrainer import AdapterTrainer
-
 import argparse
-
 import logic_adapters
 import utils.nlp as nlp
 
 from utils import movies, confidenceRange as cr
 from utils.chatbot import MovieChatBot
+from chatterbot.trainers import ChatterBotCorpusTrainer, ListTrainer
+from trainers.AdapterTrainer import AdapterTrainer
+
 # Uncomment the following lines to enable verbose logging
-# import logging
-# logging.basicConfig(level=logging.INFO)
+import logging
+logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser()
 
@@ -63,13 +62,19 @@ chatbot = MovieChatBot("Terminal",
         {
             'import_path': 'chatterbot.logic.BestMatch',
             "statement_comparison_function":
-                lambda x, y: cr.lowConfidence(nlp.statement_comparison_for_best_match(x, y)),
+                lambda x, y: nlp.statement_comparison_for_best_match(x, y),
             "response_selection_method": "chatterbot.response_selection.get_random_response"
+        },
+        {
+            'import_path': 'logic_adapters.defaultResponseAdapter',
+            'threshold': 0.25,
+            'message': 'What do you mean?'
         },
     ],
     input_adapter="chatterbot.input.TerminalAdapter",
     output_adapter="chatterbot.output.TerminalAdapter",
     database=database,
+    read_only=True,
 )
 
 chatbot.set_trainer(ChatterBotCorpusTrainer)

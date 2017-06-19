@@ -266,7 +266,7 @@ def movie_comparison(statement, other_statement, data='data/keywords_dictionary.
 
 
 def statement_comparison_for_best_match(statement_1, statement_2):
-    """Compares two statements by removing punctuation and calculating levenshtein distance."""
+    """Compares two statements by removing punctuation and calculating Jaccard similarity."""
     def process(statement):
         text = statement.text
 

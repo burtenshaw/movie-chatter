@@ -5,6 +5,7 @@ import string
 
 from chatterbot.logic import LogicAdapter
 from chatterbot.conversation import Statement
+from chatterbot.comparisons import levenshtein_distance, jaccard_similarity
 
 from utils import movies, nlp, confidenceRange as cr
 
@@ -248,6 +249,12 @@ class aboutAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(aboutAdapter, self).__init__(**kwargs)
         self.movie = None
+        self.statements = [
+            "Let's talk about",
+            "Explain me something about",
+            "Give me some information about",
+            "What information do you have on",
+        ]
 
     def can_process(self, statement):
 
@@ -267,32 +274,32 @@ class aboutAdapter(LogicAdapter):
         stage = self.conversation_stage(response)
 
         if stage == 0:
+            sim = [jaccard_similarity(statement, Statement(s), threshold=0.5) 
+                    for s in self.statements]
             theMovies = movies.getMovies250All()
             ans = nlp.getBestMatchWithThreshod(statement.text, theMovies, 0.8)
             if ans is not None:
-                movie = movies.getMovie(ans)
-                if movie is not None:
-                    movies.context.upgradeMovie(movies.imdbMovie(movie))
-            else:
-                response.text = 'Please be more precise what are you looking for !!!'
-                response.confidence = cr.lowConfidence(1)
-            if (movies.context.movie() is not None):
-                self.movie = extractMovieContext(movies.context, statement)
+                self.movie = movies.imdbMovie(movies.getMovie(ans))
                 movies.context.upgradeMovie(self.movie)
+                self.movie = extractMovieContext(movies.context, statement)
                 response.text = "Do you know %s?" %(str(self.movie))
-                response.confidence = cr.lowConfidence(1)
+                response.confidence = cr.highConfidence(1) if any(sim) else cr.mediumConfidence(1)
+            else:
+                response.text = "I don't have any information on what you're looking for."
+                response.add_extra_data("about_stage", -1)
+                response.confidence = cr.mediumConfidence(1) if any(sim) else cr.noConfidence(0)
         elif stage == 1:
             val = statement.text.lower()
             if (movies.context.movie() is not None):
                 if nlp.isPositive(val):
                     response.text  = "Something you might not know is ...\n"
                     response.text += movies.trivia(self.movie)
-                    response.confidence = cr.mediumConfidence(1)
+                    response.confidence = cr.highConfidence(1)
                 else:
                     response.text = movies.plot(self.movie)
                     response.confidence = cr.highConfidence(1)
             else:
-                response.text = 'Please be more precise what are you looking for !!!'
+                response.text = "I don't have any information on what you're looking for."
                 response.confidence = cr.lowConfidence(1)
 
         return response
@@ -485,7 +492,7 @@ class GenreAdapter(LogicAdapter):
 
     def process(self, statement):
         response = collections.namedtuple('response', 'text confidence')
-        response.text = 'sorry! we couldnt find any movie in this genre'
+        response.text = "Sorry! We couldn't find any movie in this genre."
         response.confidence = cr.noConfidence(1)
 
         statement_text = nlp.cleanString(statement.text)

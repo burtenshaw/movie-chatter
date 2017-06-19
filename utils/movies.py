@@ -126,7 +126,7 @@ def genre(imdb_movie):
 
 def genreMovies(input_phrase):
     movies = []
-    print 'Okay, let me think.'
+    #print 'Okay, let me think.'
 
     for movie in top_250_list_movies:
         if input_phrase in map(lambda x:x.lower(), movie.genres):

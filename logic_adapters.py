@@ -79,11 +79,25 @@ class actorAdapter(LogicAdapter):
 
     def __init__(self, **kwargs):
         super(actorAdapter, self).__init__(**kwargs)
+        # Some word combinations that increase confidence in the response
+        self.statements = [
+            "In what movies is the performer",
+            "In what movies does actor appear",
+            "What movies does star in",
+            "What movies does appear in",
+            "What movies does act in",
+            "What movies does perform in",
+            "Who are the actors in",
+            "Who are the performers in",
+            "Who are the stars of",
+            "Who appears in",
+        ]
 
     def can_process(self, statement):
         # if movies.context.movie() is None:
         #     return False
-        words = ['actor','performer','star', 'appear', 'act', 'perform']
+        words = ['actor', 'actors', 'performer', 'performers', 'star', 'stars', 
+                'appear', 'appears', 'act', 'acts', 'perform', 'performs']
         statement_text = nlp.cleanString(statement.text)
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
             return True
@@ -91,49 +105,47 @@ class actorAdapter(LogicAdapter):
             return False
 
     def process(self, statement):
-        response = collections.namedtuple('response', 'text confidence')
-        threshold = 0.6
+        response = Statement("")
+        threshold = 0.75
         humanNames = nlp.get_human_names(statement.text)
         (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
-        personWritten = False
-        if similarity >= threshold:
-            val = raw_input("Do you mean %s \n" %(person))
-            if nlp.isPositive(val):
-                personWritten = True
-            else:
-                personWritten = False
+
+        personWritten = similarity >= threshold
+
+        sim = [jaccard_similarity(statement, Statement(s), threshold=0.4) 
+                for s in self.statements]
+        conf = 1 if any(sim) else 0
         theMovies = movies.getMovies250All()
-        moviePresent = nlp.getBestMatchWithThreshod(statement.text,theMovies,0.8)
+        moviePresent = nlp.getBestMatchWithThreshod(statement.text, theMovies, 0.8)
         if personWritten and moviePresent==None:
             if 'cast'  in movies.people_role[person]:
                 moviesW = movies.people_role[person]['cast']
-                response.text = person + " has acted: " + format(moviesW)
-                response.confidence = cr.highConfidence(1)
+                response.text = person + " has acted in: " + format(moviesW)
+                response.confidence = cr.highConfidence(conf)
             else:
-                response.text = person + " is not registered as an actor in our Database, keep trying, we won't give up!!"
-                response.confidence = cr.mediumConfidence(1)
+                response.text = person + " is not registered as an actor in our database. Keep trying, we won't give up!"
+                response.confidence = cr.mediumConfidence(conf)
         elif personWritten and moviePresent!=None:
             if 'cast'  in movies.people_role[person]:
                 moviesW = movies.people_role[person]['cast']
                 if moviePresent in movies.people_role[person]['cast']:
-                    response.text = "Hurray! " + person + " did act in " + moviePresent + "!! your beating my database!!"
-                    response.confidence = cr.highConfidence(1)
+                    response.text = "Hurray! " + person + " did act in " + moviePresent + "!! You're beating my database!!"
+                    response.confidence = cr.highConfidence(conf)
                 else:
                     response.text = person + " did not act in " + moviePresent + " but: " + format(moviesW)
-                    response.confidence = cr.mediumConfidence(1)
+                    response.confidence = cr.mediumConfidence(conf)
         elif not personWritten and moviePresent!=None:
             movieObj = movies.getMovie250(moviePresent)
-            response.text = "the actors of the " + moviePresent + " are: " + format(movieObj.cast)
-            response.confidence = cr.mediumConfidence(1)
+            response.text = "The actors of the movie " + moviePresent + " are: " + format(movieObj.cast)
+            response.confidence = cr.highConfidence(conf)
         else:
             response.text = ""
-            response.confidence = cr.lowConfidence(1)
-        if response.text == "":
+            response.confidence = cr.noConfidence(0)
             if movies.context.movie() is not None:
                 if movies.context.movie() is not None:
                     context_movie = extractMovieContext(movies.context, statement)
                     response = self.enumerate(context_movie)
-                    response.confidence = cr.highConfidence(1)
+                    response.confidence = cr.highConfidence(conf)
         return response
 
     def enumerate(self, imdb_movie):
@@ -146,7 +158,6 @@ class actorAdapter(LogicAdapter):
         response.confidence = cr.lowConfidence(1)
 
         return response
-
 
 
 class faqAdapter(LogicAdapter):
@@ -174,7 +185,6 @@ class faqAdapter(LogicAdapter):
         # Can't handle empty context
         if movies.context.movie() is None:
             return False
-
 
     def similar(self, m1, m2):
         """
@@ -249,11 +259,15 @@ class aboutAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(aboutAdapter, self).__init__(**kwargs)
         self.movie = None
+        # Some word combinations that increase confidence in the response
         self.statements = [
+            "Tell me something about",
+            "I want to know more about",
             "Let's talk about",
             "Explain me something about",
             "Give me some information about",
             "What information do you have on",
+            "What do you know about",
         ]
 
     def can_process(self, statement):
@@ -274,7 +288,7 @@ class aboutAdapter(LogicAdapter):
         stage = self.conversation_stage(response)
 
         if stage == 0:
-            sim = [jaccard_similarity(statement, Statement(s), threshold=0.5) 
+            sim = [jaccard_similarity(statement, Statement(s), threshold=0.4) 
                     for s in self.statements]
             theMovies = movies.getMovies250All()
             ans = nlp.getBestMatchWithThreshod(statement.text, theMovies, 0.8)

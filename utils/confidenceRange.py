@@ -3,7 +3,7 @@
 This module defines a number of confidence ranges:
 
     high confidence: near certainty that this is an appropriate answer
-    medium confidence: probably a good answer, but good matches in DB can score higher
+    medium confidence: probably a good answer, but other adapters/DB may have better
     low confidence: potentially relevant, but prefer other adapters/DB
     no confidence: answer is almost certainly uselesss
 

@@ -112,7 +112,7 @@ class actorAdapter(LogicAdapter):
 
         personWritten = similarity >= threshold
 
-        sim = [jaccard_similarity(statement, Statement(s), threshold=0.4) 
+        sim = [jaccard_similarity(statement, Statement(s), threshold=0.6) 
                 for s in self.statements]
         conf = 1 if any(sim) else 0
         theMovies = movies.getMovies250All()
@@ -288,7 +288,7 @@ class aboutAdapter(LogicAdapter):
         stage = self.conversation_stage(response)
 
         if stage == 0:
-            sim = [jaccard_similarity(statement, Statement(s), threshold=0.4) 
+            sim = [jaccard_similarity(statement, Statement(s), threshold=0.6) 
                     for s in self.statements]
             theMovies = movies.getMovies250All()
             ans = nlp.getBestMatchWithThreshod(statement.text, theMovies, 0.8)
@@ -329,11 +329,24 @@ class aboutAdapter(LogicAdapter):
 
 
 class movieAdapter(LogicAdapter):
+
     def __init__(self, **kwargs):
         super(movieAdapter, self).__init__(**kwargs)
+        # Some word combinations that increase confidence in the response
+        self.statements = [
+            "What movies can you recommend",
+            "Can you recommend me something to watch",
+            "What are some movies I should see",
+            "Give me a movie suggestion",
+            "I want to see something new",
+        ]
 
     def can_process(self, statement):
-        words = ['movie', 'film','watch']
+
+        if self.conversation_stage() > 0:
+            return True
+
+        words = ['movie', 'movies', 'film', 'films', 'watch', 'see']
         statement_text = nlp.cleanString(statement.text)
         #If user wants to know about a genre, don't give this adapter
         genre = GenreAdapter()
@@ -359,45 +372,58 @@ class movieAdapter(LogicAdapter):
 
     def process(self, statement):
         movie = None
-        response = collections.namedtuple('response', 'text confidence')
-        fav_movie = raw_input("What's your favorite film? Maybe we can find something similar.\n")
+        response = Statement("")
+        stage = self.conversation_stage(response)
 
-        # Don't get stuck for ever finding the right movie.
-        count = 0
-        while count < 3:
+        if stage == 0:
+            sim = [jaccard_similarity(statement, Statement(s), threshold=0.6) 
+                    for s in self.statements]
+            conf = 1 if any(sim) else 0
+            response.text = "What's your favorite film? Maybe we can find something similar."
+            response.confidence = cr.highConfidence(conf)
+        if stage == 1:
             try:
-                movie = movies.getMovie(fav_movie.rstrip(string.punctuation))   # Remove trailing punctuation for better search results
+                movie = movies.getMovie(statement.text.rstrip(string.punctuation))   # Remove trailing punctuation for better search results
             except IndexError:
-                fav_movie = raw_input("I don't know that one. Any others? \n")
-                movie = movies.getMovie(fav_movie)
-
+                response.text = "I'm afraid I don't know that movie, sorry!"
+                response.confidence = cr.highConfidence(1)
+                return response
             movies.context.upgradeMovie(movies.imdbMovie(movie))
 
-            val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director))
-            count += 1
-            if nlp.isPositive(val):
-                similar = movies.similarMovie(movie[2])
-                if similar ==  None:
-                    response.text = 'Sorry, we couldn\'t find any similar movies.'
-                    response.confidence = cr.highConfidence(1)
-                else:
-                    response.text = "How about %s?" %(str(similar))
-                    response.confidence = cr.highConfidence(1)
-                    movies.context.upgradeMovie(
-                        movies.imdbMovie(movies.getMovie(str(similar)))
-                    )
-                return response
+            similar = movies.similarMovie(movie[2])
+            if similar !=  None:
+                response.text = "If you enjoy {}, I can recommend {}.".format(movie[0].title, similar)
+                response.confidence = cr.highConfidence(1)
+                movies.context.upgradeMovie(
+                    movies.imdbMovie(movies.getMovie(str(similar)))
+                )
             else:
-                fav_movie = raw_input("I'm sorry, please be more specific.\n")
-
-
-        response.text = 'Then I don\'t know which one you mean.'
+                response.text = "Sorry, we couldn't find any similar movies."
+                response.confidence = cr.highConfidence(1)
 
         return response
+
+    def conversation_stage(self, response=Statement("")):
+        hist = self.chatbot.output_history if self.chatbot else []
+        if hist == [] or type(hist[-1]) != Statement:
+            stage = 0
+        else:
+            stage = (hist[-1].extra_data.get("movie_stage", -1) + 1) % 2
+        response.add_extra_data("movie_stage", stage)
+        return stage
+
 
 class ratingAdapter(LogicAdapter):
     def __init__(self, **kwargs):
         super(ratingAdapter, self).__init__(**kwargs)
+        # Some word combinations that increase confidence in the response
+        self.statements = [
+            "What is its rating",
+            "What's its rating like",
+            "Is it popular",
+            "Is it any good",
+            "Do people like it",
+        ]
 
     @staticmethod
     def type():
@@ -406,7 +432,7 @@ class ratingAdapter(LogicAdapter):
     def can_process(self, statement):
         if movies.context.movie() is None:
             return False
-        words = ['rating','popular','good','like']
+        words = ['rating', 'popular', 'good', 'like']
         statement_text = nlp.cleanString(statement.text)
 
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
@@ -415,20 +441,24 @@ class ratingAdapter(LogicAdapter):
             return False
 
     def process(self, statement):
-        response = collections.namedtuple('response', 'text confidence')
+        response = Statement("")
         context = extractMovieContext(movies.context, statement)
         rating = movies.rating(context)
         response.text = "The movie is rated " + str(rating) + "/10."
         add = ''
-        if rating > 6:
+        if rating > 8:
+            add = "\nSo it's considered an excellent movie!"
+        elif rating > 6:
             add = "\nIn general, people seem to like it."
-            if rating > 8:
-                add = "\nSo it should be really good!"
 
+        sim = [jaccard_similarity(statement, Statement(s), threshold=0.6) 
+                for s in self.statements]
+        conf = 1 if any(sim) else 0
         response.text += add
-        response.confidence = cr.lowConfidence(1)
+        response.confidence = cr.mediumConfidence(conf)
 
         return response
+
 
 class writerAdapter(LogicAdapter):
     def __init__(self, **kwargs):

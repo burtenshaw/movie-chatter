@@ -106,13 +106,13 @@ class actorAdapter(LogicAdapter):
 
     def process(self, statement):
         response = Statement("")
-        threshold = 0.75
+        threshold = 0.90
         humanNames = nlp.get_human_names(statement.text)
         (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
 
         personWritten = similarity >= threshold
 
-        sim = [jaccard_similarity(statement, Statement(s), threshold=0.6) 
+        sim = [jaccard_similarity(statement, Statement(s), threshold=0.55) 
                 for s in self.statements]
         conf = 1 if any(sim) else 0
         theMovies = movies.getMovies250All()
@@ -288,7 +288,7 @@ class aboutAdapter(LogicAdapter):
         stage = self.conversation_stage(response)
 
         if stage == 0:
-            sim = [jaccard_similarity(statement, Statement(s), threshold=0.6) 
+            sim = [jaccard_similarity(statement, Statement(s), threshold=0.55) 
                     for s in self.statements]
             theMovies = movies.getMovies250All()
             ans = nlp.getBestMatchWithThreshod(statement.text, theMovies, 0.8)
@@ -376,7 +376,7 @@ class movieAdapter(LogicAdapter):
         stage = self.conversation_stage(response)
 
         if stage == 0:
-            sim = [jaccard_similarity(statement, Statement(s), threshold=0.6) 
+            sim = [jaccard_similarity(statement, Statement(s), threshold=0.55) 
                     for s in self.statements]
             conf = 1 if any(sim) else 0
             response.text = "What's your favorite film? Maybe we can find something similar."
@@ -414,6 +414,7 @@ class movieAdapter(LogicAdapter):
 
 
 class ratingAdapter(LogicAdapter):
+
     def __init__(self, **kwargs):
         super(ratingAdapter, self).__init__(**kwargs)
         # Some word combinations that increase confidence in the response
@@ -451,7 +452,7 @@ class ratingAdapter(LogicAdapter):
         elif rating > 6:
             add = "\nIn general, people seem to like it."
 
-        sim = [jaccard_similarity(statement, Statement(s), threshold=0.6) 
+        sim = [jaccard_similarity(statement, Statement(s), threshold=0.55) 
                 for s in self.statements]
         conf = 1 if any(sim) else 0
         response.text += add
@@ -461,11 +462,21 @@ class ratingAdapter(LogicAdapter):
 
 
 class writerAdapter(LogicAdapter):
+
     def __init__(self, **kwargs):
         super(writerAdapter, self).__init__(**kwargs)
+        # Some word combinations that increase confidence in the response
+        self.statements = [
+            "Who wrote the movie",
+            "Who created the movie",
+            "Who is the author of",
+            "Who are the authors of",
+            "Who are the people that created",
+        ]
 
     def can_process(self, statement):
-        words = ['writer', 'writes', 'wrote','written','create','compose','author','scribble','rewrite']
+        words = ['writer', 'writes', 'wrote', 'written', 'create', 'created',
+                'compose', 'author', 'authors', 'scribble', 'rewrite']
         statement_text = nlp.cleanString(statement.text)
         if any(nlp.stem(x) in [nlp.stem(w) for w in words] for x in statement_text.split()):
             return True
@@ -473,57 +484,63 @@ class writerAdapter(LogicAdapter):
             return False
 
     def process(self, statement):
-        response = collections.namedtuple('response', 'text confidence')
-        threshold = 0.6
+        response = Statement("")
+        threshold = 0.90
         humanNames = nlp.get_human_names(statement.text)
         (person,nameSimilar,similarity) = movies.getPersonMaxSimilarity(humanNames)
-        personWritten = False
-        if similarity >= threshold:
-            val = raw_input("Do you mean %s \n" %(person))
-            if nlp.isPositive(val):
-                personWritten = True
-            else:
-                personWritten = False
+        personWritten = similarity >= threshold
+
+        sim = [jaccard_similarity(statement, Statement(s), threshold=0.55) 
+                for s in self.statements]
+        conf = 1 if any(sim) else 0
+
         theMovies = movies.getMovies250All()
-        moviePresent = nlp.getBestMatchWithThreshod(statement.text,theMovies,0.8)
+        moviePresent = nlp.getBestMatchWithThreshod(statement.text, theMovies, 0.8)
         if personWritten and moviePresent==None:
             if 'writer'  in movies.people_role[person]:
                 moviesW = movies.people_role[person]['writer']
                 response.text = person + " has written: " + format(moviesW)
-                response.confidence = cr.highConfidence(1)
+                response.confidence = cr.highConfidence(conf)
             else:
                 response.text = person + " is not registered as a writer in our Database, keep trying, we won't give up!!"
-                response.confidence = cr.mediumConfidence(1)
+                response.confidence = cr.mediumConfidence(conf)
         elif personWritten and moviePresent!=None:
             if 'writer'  in movies.people_role[person]:
                 moviesW = movies.people_role[person]['writer']
                 if moviePresent in movies.people_role[person]['writer']:
-                    response.text = "Hurray! " + person + " did write " + moviePresent + "!! your beating my database!!"
-                    response.confidence = cr.highConfidence(1)
+                    response.text = "Hurray! " + person + " did write " + moviePresent + "!! You're beating my database!!"
+                    response.confidence = cr.highConfidence(conf)
                 else:
                     response.text = moviePresent + " was not written by " + person + " but: " + format(moviesW)
-                    response.confidence = cr.mediumConfidence(1)
+                    response.confidence = cr.mediumConfidence(conf)
         elif not personWritten and moviePresent!=None:
             movieObj = movies.getMovie250(moviePresent)
             response.text = "the writers of the " + moviePresent + " are: " + format(movieObj.writer)
-            response.confidence = cr.mediumConfidence(1)
+            response.confidence = cr.highConfidence(conf)
         else:
             response.text = ""
-            response.confidence = cr.lowConfidence(1)
-        if response.text == "":
+            response.confidence = cr.lowConfidence(conf)
             if movies.context.movie() is not None:
                 context = extractMovieContext(movies.context, statement)
                 writers = [writer['name'] for writer in movies.writer(context)]
                 response.text = "The writers of the movie are: \n" + format(writers)
-                response.confidence = cr.highConfidence(1)
+                response.confidence = cr.highConfidence(conf)
         return response
 
 
 class GenreAdapter(LogicAdapter):
+
     def __init__(self, **kwargs):
         super(GenreAdapter, self).__init__(**kwargs)
         self.genres = ['action','comedy', 'documentary', 'family', 'adventure', 'biography', 'crime','drama','romance','fantasy', 'horror', 'war','musical',
         'sport', 'thriller', 'western','music','history']
+        # Some word combinations that increase confidence in the response
+        self.statements = [
+            "Can you tell me some movies",
+            "Recommend me some movies in the genre",
+            "I want to see some movies",
+            "Please advise me some good movies",
+        ]
 
         #Phrase 'wanna see some action tonight.'
         #now accept phrases even using comedies or histories. using Jaro Winkler Distance
@@ -535,9 +552,11 @@ class GenreAdapter(LogicAdapter):
             return False
 
     def process(self, statement):
-        response = collections.namedtuple('response', 'text confidence')
-        response.text = "Sorry! We couldn't find any movie in this genre."
-        response.confidence = cr.noConfidence(1)
+        response = Statement("")
+
+        sim = [jaccard_similarity(statement, Statement(s), threshold=0.55) 
+                for s in self.statements]
+        conf = 1 if any(sim) else 0
 
         statement_text = nlp.cleanString(statement.text)
         genre = nlp.jaro_distance(statement_text, self.genres)
@@ -552,34 +571,10 @@ class GenreAdapter(LogicAdapter):
 
             answer = answer[:-4]
             response.text = answer
-            response.confidence = cr.mediumConfidence(1)
-                # fav_movie = raw_input("select what movie do you like to see !!! \n")
-                # # Get the movie
-                # try:
-                #     movie = movies.getMovie(fav_movie)
-                # except IndexError:
-                #     fav_movie = raw_input("I don't know that one. Any others? \n")
-                #     movie = movies.getMovie(fav_movie)
-                # movies.context.upgradeMovie(movie[2])
-                # val = raw_input("Do you mean %s directed by %s?\n" %(movie[0].title,movie[0].director))
-                # if any(x in resp.lower() for x in nlp.positives() + ['i do']):
-                #     response.text = 'ejoy the movie !!!'
-                #     response.confidence = 1
-                # else:
-                #     similar = movies.similarMovie(movie[2])
-                #     if similar ==  None:
-                #         response.text = 'Sorry, we couldn\'t find any similar movies.'
-                #         response.confidence = 1
-                #     else:
-                #         response.text = "How about %s?" %(str(similar))
-                #         response.confidence = 1
-                #         movies.context.upgradeMovie(
-                #             movies.imdbMovie(movies.getMovie(str(similar)))
-                #         )
-
+            response.confidence = cr.mediumConfidence(conf)
         else:
-            response.text = 'Anything else I can help you with?'
-
+            response.text = "Sorry! We couldn't find any movie in this genre."
+            response.confidence = cr.lowConfidence(conf)
         return response
 
 
